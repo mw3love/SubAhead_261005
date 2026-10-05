@@ -53,7 +53,6 @@
 | `demo/` | 시험용 페이지와 영상 (`python3 demo/serve.py` → `http://127.0.0.1:8000`, HLS 시험은 `/hls/`) |
 | `store/` | 웹스토어 설명 글, 개인정보처리방침, 스크린샷 |
 | `tools/i18n_messages.py` | 화면 문구 원본(한국어·영어). 고친 뒤 실행하면 `_locales` 가 다시 만들어져요 |
-| `archive/hackathon/` | 처음 만들었던 "확장 + 내 PC 서버" 방식 (보관용) |
 
 웹스토어 업로드용 zip 은 `extension-standalone` 폴더 안의 파일을 묶어 만들어요(저장소에는 올리지 않음).
 

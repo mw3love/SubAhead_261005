@@ -15,7 +15,7 @@
 </head>
 <body>
 <h1>SubAhead 개인정보처리방침</h1>
-<p class="muted">시행일: 2026년 10월 4일</p>
+<p class="muted">시행일: 2026년 10월 5일</p>
 
 <p>"SubAhead"(이하 "확장 프로그램")은 웹 영상에 자막을 만들어 주는 크롬 확장 프로그램입니다. 이 문서는 확장 프로그램이 어떤 정보를 다루고, 어디로 보내는지 설명합니다.</p>
 
@@ -25,8 +25,8 @@
 <h2>2. 확장 프로그램이 다루는 정보</h2>
 <ul>
   <li><strong>API 게이트웨이 주소와 키</strong>: 사용자가 입력한 음성인식 API 게이트웨이의 주소와 키입니다. 사용자의 브라우저(chrome.storage.local)에만 저장되며, 음성인식을 요청할 때 그 게이트웨이로만 전송됩니다.</li>
-  <li><strong>영상의 소리</strong>: 사용자가 "전체 자막 만들기"를 누른 영상에서 소리만 뽑아 음성인식 게이트웨이로 전송합니다. 화면 데이터는 전송하지 않습니다.</li>
-  <li><strong>만들어진 자막</strong>: 같은 영상을 다시 볼 때 쓰도록 사용자의 브라우저에만 저장됩니다. 설정 화면의 "저장된 자막" 목록에 보여 주기 위해 그 영상이 있던 페이지의 제목과 주소, 만든 날짜, 사용자가 맞춘 싱크 값도 함께 저장됩니다. 이 정보는 외부로 보내지 않습니다.</li>
+  <li><strong>영상의 소리</strong>: 사용자가 자막 만들기를 요청한 영상(팝업의 만들기 버튼, 단축키, 영상 오른쪽 클릭 메뉴)에서 소리만 뽑아 음성인식 게이트웨이로 전송합니다. 화면 데이터는 전송하지 않습니다.</li>
+  <li><strong>만들어진 자막</strong>: 같은 영상을 다시 볼 때 쓰도록 사용자의 브라우저에만 저장됩니다. "보관함" 탭의 목록에 보여 주기 위해 그 영상이 있던 페이지의 제목과 주소, 만든 날짜, 사용자가 맞춘 싱크 값도 함께 저장됩니다. 이 정보는 외부로 보내지 않습니다. 사용자가 자막을 파일(SRT·TXT)로 받거나 복사하면 사용자의 컴퓨터나 클립보드에만 저장됩니다.</li>
   <li><strong>자막 모양 설정</strong>: 글자 크기·색 등 사용자가 고른 설정이 브라우저에만 저장됩니다.</li>
   <li><strong>영상 주소</strong>: 자막을 만들 영상을 찾기 위해 페이지가 불러오는 영상 주소를 읽습니다. 이 정보는 브라우저 안에서만 쓰이고 외부로 보내지 않습니다(영상 데이터를 받기 위해 해당 영상 서버에 요청하는 경우 제외).</li>
 </ul>
@@ -35,32 +35,32 @@
 <p>영상의 소리와 API 키는 자막 생성을 위해 사용자가 설정한 API 게이트웨이로 전송되며, 게이트웨이는 음성인식 서비스를 이용해 글자로 바꿉니다. 이 과정에서의 정보 처리는 그 게이트웨이와 음성인식 서비스의 개인정보처리방침을 따릅니다. 확장 프로그램은 이 정보를 판매하거나 광고·신용 평가 등 다른 목적으로 사용하지 않습니다.</p>
 
 <h2>4. 정보 삭제</h2>
-<p>확장 프로그램을 삭제하면 브라우저에 저장된 API 키와 자막이 함께 삭제됩니다.</p>
+<p>확장 프로그램을 삭제하면 브라우저에 저장된 API 키와 자막이 함께 삭제됩니다. 저장된 자막은 언제든 "보관함" 탭에서 지울 수 있습니다.</p>
 
 <h2>5. 문의</h2>
-<p>{연락처 이메일}</p>
+<p>7maker@gmail.com</p>
 
 <hr style="margin:40px 0;border:0;border-top:1px solid #94a3b8">
 <h1 lang="en">SubAhead Privacy Policy</h1>
 <div lang="en">
-<p class="muted">Effective date: October 4, 2026</p>
+<p class="muted">Effective date: October 5, 2026</p>
 <p>SubAhead ("the extension") is a Chrome extension that creates subtitles for web videos. This page explains what information it handles and where it is sent.</p>
 <h2>1. Information collected by the developer</h2>
 <p>None. The developer does not run a server and does not collect, store or analyze your information or usage.</p>
 <h2>2. Information the extension handles</h2>
 <ul>
   <li><strong>API gateway address and key</strong>: the address and key of the speech recognition API gateway you enter. They are stored only in your browser (chrome.storage.local) and the key is sent only to that gateway when you request a transcription.</li>
-  <li><strong>Video audio</strong>: when you press "Create full subtitles", only the audio of that video is extracted and sent to the gateway. The picture is not sent.</li>
-  <li><strong>Created subtitles</strong>: stored only in your browser so they can be reused for the same video. To show the "Saved subtitles" list in Settings, the title and address of the page the video was on, the creation date and any timing adjustment are stored with them. This information is not sent anywhere.</li>
+  <li><strong>Video audio</strong>: when you ask the extension to create subtitles for a video (the create button in the popup, the keyboard shortcut or the right-click menu on a video), only the audio of that video is extracted and sent to the gateway. The picture is not sent.</li>
+  <li><strong>Created subtitles</strong>: stored only in your browser so they can be reused for the same video. To show them in the Library tab, the title and address of the page the video was on, the creation date and any timing adjustment are stored with them. This information is not sent anywhere. If you download subtitles as a file (SRT or TXT) or copy them, they are saved only on your computer or clipboard.</li>
   <li><strong>Subtitle style settings</strong>: the size, color and other options you choose are stored only in your browser.</li>
   <li><strong>Video address</strong>: the extension reads the video addresses a page loads in order to find the video. This stays in the browser and is not sent elsewhere (except requests to the video server itself to fetch the video data).</li>
 </ul>
 <h2>3. Information sent to third parties</h2>
 <p>The video audio and your API key are sent to the API gateway you configured, which uses a speech recognition service to produce text. That processing is governed by the privacy policies of that gateway and speech recognition service. The extension does not sell this information or use it for advertising, credit decisions or any other purpose.</p>
 <h2>4. Deleting information</h2>
-<p>Removing the extension deletes the API key and subtitles stored in your browser. You can also delete saved subtitles at any time in Settings.</p>
+<p>Removing the extension deletes the API key and subtitles stored in your browser. You can also delete saved subtitles at any time in the Library tab.</p>
 <h2>5. Contact</h2>
-<p>{contact email}</p>
+<p>7maker@gmail.com</p>
 </div>
 </body>
 </html>
