@@ -60,7 +60,22 @@
   label.pick .name { flex: 1; font-weight: 600; }
   label.pick .name small { color: var(--accent); font-weight: 500; }
   label.pick .meta { color: var(--muted); font-size: 12px; }
-  label.pick:has(input:not(:checked)) { opacity: .5; }
+  label.pick:has(input:not(:checked)) .name, label.pick:has(input:not(:checked)) .meta { opacity: .5; }
+  label.pick .fmt { display: flex; gap: 4px; flex: none; }
+  label.pick.open { border-color: var(--accent); border-radius: 8px 8px 0 0; }
+  .morebox { display: flex; gap: 6px; justify-content: flex-end; flex-wrap: wrap; padding: 8px 10px; margin-top: -6px;
+             border: 1px solid var(--accent); border-top: 0; border-radius: 0 0 8px 8px; background: var(--panel); }
+  button.mini { width: auto; padding: 3px 7px; font-size: 11px; font-weight: 600; border-radius: 6px;
+                background: var(--bg); color: var(--fg); border: 1px solid var(--line2); flex: none; }
+  button.mini.warnbtn { color: var(--err); border-color: #7f1d1d; }
+  .savebar { display: flex; align-items: center; gap: 6px; margin-top: 12px; padding: 8px 10px; background: var(--panel);
+             border: 1px solid var(--line2); border-radius: 8px; }
+  .savebar span { flex: 1; color: var(--muted); }
+  input.search { width: 100%; padding: 7px 10px; border: 1px solid var(--line2); border-radius: 8px; background: var(--bg);
+                 color: var(--fg); font: inherit; margin: 6px 0 4px; }
+  ul.list button.title.open { width: 100%; display: block; padding: 0; background: none; color: var(--fg); text-align: left; border-radius: 0;
+                              text-decoration: underline; text-decoration-color: #475569; text-underline-offset: 3px; }
+  ul.list .here { color: var(--accent); font-weight: 600; }
   .result { margin-bottom: 14px; padding-bottom: 12px; border-bottom: 1px solid var(--line2); }
   .result button { margin-top: 6px; }
   .note { margin: 6px 0 0; font-size: 11px; }
@@ -122,12 +137,22 @@
 </header>
 <nav role="tablist">
   <button role="tab" id="tab-subs" aria-controls="panel-subs" aria-selected="true" data-i18n="tabSubs"></button>
+  <button role="tab" id="tab-lib" aria-controls="panel-lib" aria-selected="false" data-i18n="tabLib"></button>
   <button role="tab" id="tab-look" aria-controls="panel-look" aria-selected="false" data-i18n="tabLook"></button>
   <button role="tab" id="tab-settings" aria-controls="panel-settings" aria-selected="false" data-i18n="tabSettings"></button>
 </nav>
 
 <div role="tabpanel" id="panel-subs" aria-labelledby="tab-subs">
   <section id="main" aria-live="polite"></section>
+</div>
+
+<div role="tabpanel" id="panel-lib" aria-labelledby="tab-lib" hidden>
+  <section>
+    <div class="listhead"><h3 data-i18n="savedSubs"></h3><span id="savedsum"></span></div>
+    <input id="libsearch" class="search" type="search" data-i18n-placeholder="searchTitle" hidden>
+    <ul class="list" id="saved"></ul>
+    <button class="danger" id="clearall" hidden data-i18n="clearAll"></button>
+  </section>
 </div>
 
 <div role="tabpanel" id="panel-look" aria-labelledby="tab-look" hidden>
@@ -177,9 +202,9 @@
     </div>
   </section>
   <section>
-    <div class="listhead"><h3 data-i18n="savedSubs"></h3><span id="savedsum"></span></div>
-    <ul class="list" id="saved"></ul>
-    <button class="danger" id="clearall" hidden data-i18n="clearAll"></button>
+    <h3 data-i18n="txtTitle"></h3>
+    <label class="check"><input type="radio" name="txtmode" value="plain"><span data-i18n="txtPlain"></span></label>
+    <label class="check"><input type="radio" name="txtmode" value="time"><span data-i18n="txtTime"></span></label>
   </section>
   <section>
     <label class="check"><input type="checkbox" id="wheel"><span data-i18n="fWheel"></span></label>

@@ -318,9 +318,6 @@
   "makeAll": {
     "message": "Create full subtitles"
   },
-  "pickVideo": {
-    "message": "Video to subtitle"
-  },
   "videoN": {
     "message": "Video $P1$",
     "placeholders": {
@@ -331,9 +328,6 @@
   },
   "lastPlayed": {
     "message": "Last played"
-  },
-  "hasSubs": {
-    "message": "Has subtitles"
   },
   "checkAll": {
     "message": "Select all"
@@ -396,13 +390,52 @@
   "cancelNote": {
     "message": "Credits for audio already uploaded are not refunded."
   },
-  "srtAria": {
-    "message": "Save $P1$ as a subtitle file (.srt)",
+  "thisPageVideos": {
+    "message": "Videos on this page"
+  },
+  "saveSubs": {
+    "message": "Get subtitles"
+  },
+  "copy": {
+    "message": "Copy"
+  },
+  "copied": {
+    "message": "Copied"
+  },
+  "more": {
+    "message": "More"
+  },
+  "deleteOne": {
+    "message": "Delete"
+  },
+  "deleteConfirm": {
+    "message": "Press again to delete"
+  },
+  "thisPage": {
+    "message": "This page"
+  },
+  "searchTitle": {
+    "message": "Search by title"
+  },
+  "noMatch": {
+    "message": "No matching titles."
+  },
+  "openPage": {
+    "message": "Open page: $P1$",
     "placeholders": {
       "p1": {
         "content": "$1"
       }
     }
+  },
+  "txtTitle": {
+    "message": "TXT format"
+  },
+  "txtPlain": {
+    "message": "One sentence per line (for reading)"
+  },
+  "txtTime": {
+    "message": "Timestamp before each sentence [0:09]"
   },
   "makingTitle": {
     "message": "Creating subtitles"
@@ -537,6 +570,9 @@
   },
   "tabSubs": {
     "message": "Subtitles"
+  },
+  "tabLib": {
+    "message": "Library"
   },
   "tabLook": {
     "message": "Style"

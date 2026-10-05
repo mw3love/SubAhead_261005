@@ -15,7 +15,7 @@
 - 만들기 전에 영상 길이·예상 비용·남은 크레딧을 보여 주고, 진행 상황을 단계별로 보여 줘요. 진행 중에 취소할 수 있고(이미 올린 소리의 크레딧은 돌아오지 않음), 게이트웨이가 너무 오래 답하지 않으면(소리 길이의 3배, 최소 3분) 멈추고 다시 시도를 권해요.
 - 브라우저 기본 자막으로 표시해서 전체화면에서도 보여요.
 - 팝업의 **모양** 탭에서 미리보기를 보며 크기(0~100)·색(흰색·노랑)·배경(없음·반투명·진하게)을 바꾸면 영상 자막이 바로 바뀌어요.
-- 한 번 만든 자막은 브라우저에 저장돼서, 같은 영상을 다시 열면 크레딧 없이 바로 붙어요. **설정** 탭의 저장된 자막 목록에서 자막 파일(.srt)로 내려받을 수 있어요.
+- 한 번 만든 자막은 브라우저에 저장돼서, 같은 영상을 다시 열면 크레딧 없이 바로 붙어요. 만든 자막은 **자막** 탭의 영상 줄(이 페이지)이나 **보관함** 탭(지금까지 만든 모든 자막)에서 SRT(플레이어용)·TXT(읽기용)로 받거나 복사할 수 있어요. TXT 는 문장마다 줄을 바꾸고, **설정** 탭에서 문장 앞에 시간(`[0:09]`)을 붙이도록 바꿀 수 있어요. 보관함에서 제목을 누르면 그 페이지가 열려요.
 - 단축키와 Alt(Mac 은 Option) 조작:
 
 | 동작 | 방법 |
@@ -73,7 +73,7 @@
 
 - Finds HTML5 videos (files and HLS), extracts audio only (ffmpeg.wasm), and sends it to your speech recognition gateway.
 - On pages with several videos, a checklist in the popup (in page order, all checked by default) lets you leave some out; the rest are made with overlap (the next video's audio is extracted while the previous one is being transcribed). Or right-click a video → **Create subtitles for this video**.
-- Live preview in the Style tab to adjust size, color and background; subtitles are saved, re-applied automatically, and can be downloaded as .srt from Settings.
+- Live preview in the Style tab to adjust size, color and background; subtitles are saved, re-applied automatically, and can be downloaded as SRT or TXT (one sentence per line, optional timestamps) or copied — per video on the Subtitles tab, or from the Library tab for everything you've made.
 - Cancel while creating; stops with a retry prompt if the gateway takes too long.
 - Shortcuts: "Create subtitles" (no default key; set it at `chrome://extensions/shortcuts`, press twice to start), `Alt+Shift+S` toggle, `Alt+Shift+↑` size, `Alt+Shift+←/→` sync ±0.5s, `Alt+wheel` resize, `Alt+drag` move.
 - **Requires** the Base URL and API key of an API gateway that provides the `stt-async-v5` speech recognition model.

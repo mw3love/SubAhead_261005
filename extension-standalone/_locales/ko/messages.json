@@ -318,9 +318,6 @@
   "makeAll": {
     "message": "전체 자막 만들기"
   },
-  "pickVideo": {
-    "message": "자막을 만들 영상"
-  },
   "videoN": {
     "message": "영상 $P1$",
     "placeholders": {
@@ -331,9 +328,6 @@
   },
   "lastPlayed": {
     "message": "방금 재생"
-  },
-  "hasSubs": {
-    "message": "자막 있음"
   },
   "checkAll": {
     "message": "모두 선택"
@@ -396,13 +390,52 @@
   "cancelNote": {
     "message": "이미 올린 소리의 크레딧은 돌아오지 않아요."
   },
-  "srtAria": {
-    "message": "$P1$ 자막 파일(.srt)로 저장",
+  "thisPageVideos": {
+    "message": "이 페이지의 영상"
+  },
+  "saveSubs": {
+    "message": "자막 받기"
+  },
+  "copy": {
+    "message": "복사"
+  },
+  "copied": {
+    "message": "복사했어요"
+  },
+  "more": {
+    "message": "더 보기"
+  },
+  "deleteOne": {
+    "message": "지우기"
+  },
+  "deleteConfirm": {
+    "message": "한 번 더 누르면 지워요"
+  },
+  "thisPage": {
+    "message": "이 페이지"
+  },
+  "searchTitle": {
+    "message": "제목으로 찾기"
+  },
+  "noMatch": {
+    "message": "찾는 제목이 없어요."
+  },
+  "openPage": {
+    "message": "페이지 열기: $P1$",
     "placeholders": {
       "p1": {
         "content": "$1"
       }
     }
+  },
+  "txtTitle": {
+    "message": "TXT 파일 모양"
+  },
+  "txtPlain": {
+    "message": "문장마다 줄 바꾸기 (읽기용)"
+  },
+  "txtTime": {
+    "message": "문장 앞에 시간 붙이기 [0:09]"
   },
   "makingTitle": {
     "message": "자막을 만들고 있어요"
@@ -537,6 +570,9 @@
   },
   "tabSubs": {
     "message": "자막"
+  },
+  "tabLib": {
+    "message": "보관함"
   },
   "tabLook": {
     "message": "모양"
