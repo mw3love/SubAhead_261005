@@ -418,6 +418,9 @@
   "tabSubs": {
     "message": "자막"
   },
+  "tabLook": {
+    "message": "모양"
+  },
   "tabSettings": {
     "message": "설정"
   },
@@ -448,7 +451,7 @@
     }
   },
   "footNote": {
-    "message": "자막은 화면 아래 가운데에 나와요 · Alt+휠로 크기"
+    "message": "영상 위에서 Alt+휠로 크기, Alt+드래그로 위치를 바꿀 수 있어요"
   },
   "change": {
     "message": "변경"

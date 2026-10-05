@@ -42,23 +42,46 @@ chrome.tabs.onUpdated.addListener(async (tabId, change) => {
 async function findVideos(tabId) {
   const results = await chrome.scripting.executeScript({
     target: { tabId, allFrames: true },
-    func: () =>
-      [...document.querySelectorAll("video")].map((v, i) => ({
-        i, // 프레임 안에서 몇 번째 영상인지(팝업에서 가리킬 때 쓴다)
-        src: v.currentSrc,
-        area: v.clientWidth * v.clientHeight,
-        duration: v.duration,
-        page: location.href, // 영상이 있는 프레임 주소(받을 때 Referer 로 쓴다)
-      })),
+    func: () => {
+      // x, y: 페이지 맨 위 기준 위치(팝업 목록을 위→아래로 매길 때). 프레임 위치(frameOffset, content.js)를 모르면 null.
+      const o = typeof frameOffset === "undefined" ? null : frameOffset;
+      return [...document.querySelectorAll("video")].map((v, i) => {
+        const r = v.getBoundingClientRect();
+        return {
+          i, // 프레임 안에서 몇 번째 영상인지(팝업에서 가리킬 때 쓴다)
+          src: v.currentSrc,
+          area: v.clientWidth * v.clientHeight,
+          duration: v.duration,
+          page: location.href, // 영상이 있는 프레임 주소(받을 때 Referer 로 쓴다)
+          x: o ? o.x + r.left + scrollX : null,
+          y: o ? o.y + r.top + scrollY : null,
+        };
+      });
+    },
   });
   // frameId: 영상이 있는 프레임. 만든 자막을 그 프레임에만 보낼 때 쓴다.
-  return results.flatMap((r) => (r.result || []).map((v) => ({ ...v, frameId: r.frameId }))).sort((a, b) => b.area - a.area);
+  // 큰 영상부터. 크기가 같으면 위쪽 영상부터(기본으로 고르는 영상이 매번 같도록).
+  return results
+    .flatMap((r) => (r.result || []).map((v) => ({ ...v, frameId: r.frameId })))
+    .sort((a, b) => b.area - a.area || (a.y ?? Infinity) - (b.y ?? Infinity) || 0);
+}
+
+// 각 프레임이 페이지 맨 위에서 얼마나 떨어져 있는지 맨 바깥 페이지부터 안쪽으로 알린다(content.js).
+// 메시지가 안쪽 프레임까지 닿을 시간을 잠깐 기다린다.
+async function placeFrames(tabId) {
+  await chrome.scripting.executeScript({
+    target: { tabId, frameIds: [0] },
+    func: () => typeof tellFrames === "function" && tellFrames(),
+  });
+  await new Promise((res) => setTimeout(res, 150));
 }
 
 // 팝업에서 고를 수 있는 영상: 화면에 보이고 주소(http)가 드러난 영상. blob 영상은 어느 데이터인지 짝지을 수 없어 뺀다.
 function choices(videos) {
   const seen = new Set();
-  return videos.filter((v) => v.area > 0 && /^https?:/.test(v.src) && !seen.has(v.src) && seen.add(v.src));
+  return videos
+    .filter((v) => v.area > 0 && /^https?:/.test(v.src) && !seen.has(v.src) && seen.add(v.src))
+    .sort((a, b) => (a.y == null) - (b.y == null) || a.y - b.y || a.x - b.x); // 페이지 위→아래, 같은 줄이면 왼쪽부터(위치 모르면 뒤로)
 }
 
 async function pickSource(tabId, videos, chosen) {
@@ -175,6 +198,7 @@ async function info(tabId, chosen) {
   if (!server) return { hasKey: false, job, baseUrl: baseUrl || "" };
   let videos = [];
   try {
+    await placeFrames(tabId);
     videos = await findVideos(tabId);
   } catch {
     // chrome:// 같은 페이지는 스크립트를 넣을 수 없다

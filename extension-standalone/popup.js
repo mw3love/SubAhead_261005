@@ -29,7 +29,7 @@ const fmtSize = (b) => (b < 1024 * 1024 ? Math.max(1, Math.round(b / 1024)) + " 
 
 // ---------- 탭 ----------
 function showTab(name) {
-  for (const [tab, panel] of [["tab-subs", "panel-subs"], ["tab-settings", "panel-settings"]]) {
+  for (const [tab, panel] of [["tab-subs", "panel-subs"], ["tab-look", "panel-look"], ["tab-settings", "panel-settings"]]) {
     const on = tab === "tab-" + name;
     $(tab).setAttribute("aria-selected", String(on));
     $(panel).hidden = !on;
@@ -137,7 +137,6 @@ function render() {
   const credits = $("credits");
   credits.hidden = info.remaining == null;
   if (info.remaining != null) credits.textContent = t("remaining", fmtNum(info.remaining));
-  $("look").hidden = $("foot").hidden = !info.hasKey;
   const job = info.job;
   // 다른 영상으로 옮겨 간 뒤의 지난 결과는 보여 주지 않는다(진행 중은 항상 보여 줌).
   const sameVideo = job && (!job.url || !info.url || job.url === info.url);
@@ -281,6 +280,7 @@ async function load() {
   $("preview").setAttribute("aria-label", t("preview"));
 
   $("tab-subs").onclick = () => showTab("subs");
+  $("tab-look").onclick = () => showTab("look");
   $("tab-settings").onclick = () => showTab("settings");
   $("size").oninput = () => saveStyle({ size: +$("size").value });
   for (const b of document.querySelectorAll("[data-color]")) b.onclick = () => saveStyle({ color: b.dataset.color });

@@ -418,6 +418,9 @@
   "tabSubs": {
     "message": "Subtitles"
   },
+  "tabLook": {
+    "message": "Style"
+  },
   "tabSettings": {
     "message": "Settings"
   },
@@ -448,7 +451,7 @@
     }
   },
   "footNote": {
-    "message": "Subtitles appear at the bottom center · Alt+wheel to resize"
+    "message": "On the video, Alt+wheel resizes and Alt+drag moves subtitles"
   },
   "change": {
     "message": "Change"

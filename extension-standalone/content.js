@@ -236,6 +236,23 @@ document.addEventListener("play", (e) => {
     chrome.runtime.sendMessage({ type: "played", src: v.currentSrc }).catch(() => {});
 }, true);
 
+// 이 프레임이 페이지 맨 위에서 떨어진 거리. 팝업 영상 목록을 페이지 위→아래로 매길 때 background 가 읽는다.
+// 맨 바깥 페이지는 0, 안쪽 프레임은 바로 바깥 프레임이 postMessage 로 알려 준다(다른 사이트 프레임도 된다).
+let frameOffset = window === top ? { x: 0, y: 0 } : null;
+function tellFrames() {
+  if (!frameOffset) return;
+  for (const f of document.querySelectorAll("iframe, frame")) {
+    const r = f.getBoundingClientRect();
+    if (f.contentWindow)
+      f.contentWindow.postMessage({ subaheadOffset: { x: frameOffset.x + r.left + scrollX, y: frameOffset.y + r.top + scrollY } }, "*");
+  }
+}
+window.addEventListener("message", (e) => {
+  if (e.source !== parent || window === top || !e.data || !e.data.subaheadOffset) return;
+  frameOffset = e.data.subaheadOffset;
+  tellFrames();
+});
+
 // 팝업의 영상 목록에서 가리킨 영상에 잠깐 노란 테두리를 친다(팝업이 갑자기 닫혀도 3초 뒤 지워진다).
 let lit = null, litTimer;
 function highlight(i, on, scroll) {
