@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>미리 자막 개인정보처리방침</title>
+<style>
+  :root { --bg: #ffffff; --fg: #1f2937; --muted: #6b7280; }
+  @media (prefers-color-scheme: dark) { :root { --bg: #111827; --fg: #e5e7eb; --muted: #9ca3af; } }
+  body { background: var(--bg); color: var(--fg); font: 16px/1.7 -apple-system, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif; max-width: 720px; margin: 40px auto; padding: 0 16px; }
+  h1 { font-size: 26px; }
+  h2 { font-size: 19px; margin-top: 32px; }
+  .muted { color: var(--muted); }
+</style>
+</head>
+<body>
+<h1>미리 자막 개인정보처리방침</h1>
+<p class="muted">시행일: 2026년 10월 4일</p>
+
+<p>"미리 자막"(이하 "확장 프로그램")은 웹 영상에 자막을 만들어 주는 크롬 확장 프로그램입니다. 이 문서는 확장 프로그램이 어떤 정보를 다루고, 어디로 보내는지 설명합니다.</p>
+
+<h2>1. 개발자가 수집하는 정보</h2>
+<p>없습니다. 개발자는 별도의 서버를 운영하지 않으며, 사용자의 정보나 사용 기록을 수집·저장·분석하지 않습니다.</p>
+
+<h2>2. 확장 프로그램이 다루는 정보</h2>
+<ul>
+  <li><strong>API 키</strong>: 사용자가 설정 화면에 입력한 음성인식 게이트웨이 키입니다. 사용자의 브라우저(chrome.storage.local)에만 저장되며, 음성인식을 요청할 때 게이트웨이로만 전송됩니다.</li>
+  <li><strong>영상의 소리</strong>: 사용자가 "전체 자막 만들기"를 누른 영상에서 소리만 뽑아 음성인식 게이트웨이로 전송합니다. 화면 데이터는 전송하지 않습니다.</li>
+  <li><strong>만들어진 자막</strong>: 같은 영상을 다시 볼 때 쓰도록 사용자의 브라우저에만 저장됩니다. 설정 화면의 "저장된 자막" 목록에 보여 주기 위해 그 영상이 있던 페이지의 제목과 주소, 만든 날짜, 사용자가 맞춘 싱크 값도 함께 저장됩니다. 이 정보는 외부로 보내지 않습니다.</li>
+  <li><strong>자막 모양 설정</strong>: 글자 크기·색 등 사용자가 고른 설정이 브라우저에만 저장됩니다.</li>
+  <li><strong>영상 주소</strong>: 자막을 만들 영상을 찾기 위해 페이지가 불러오는 영상 주소를 읽습니다. 이 정보는 브라우저 안에서만 쓰이고 외부로 보내지 않습니다(영상 데이터를 받기 위해 해당 영상 서버에 요청하는 경우 제외).</li>
+</ul>
+
+<h2>3. 제3자에게 전송되는 정보</h2>
+<p>영상의 소리와 API 키는 자막 생성을 위해 사용자가 선택한 음성인식 게이트웨이(mindlogic API Gateway)로 전송되며, 게이트웨이는 음성인식 서비스(Soniox)를 이용해 글자로 바꿉니다. 이 과정에서의 정보 처리는 각 서비스의 개인정보처리방침을 따릅니다. 확장 프로그램은 이 정보를 판매하거나 광고·신용 평가 등 다른 목적으로 사용하지 않습니다.</p>
+
+<h2>4. 정보 삭제</h2>
+<p>확장 프로그램을 삭제하면 브라우저에 저장된 API 키와 자막이 함께 삭제됩니다.</p>
+
+<h2>5. 문의</h2>
+<p>{연락처 이메일}</p>
+</body>
+</html>

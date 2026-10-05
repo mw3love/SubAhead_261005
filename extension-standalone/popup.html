@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="ko">
+<meta charset="utf-8">
+<style>
+  :root {
+    --bg: #ffffff; --fg: #0f172a; --muted: #64748b; --line: #e2e8f0; --card: #f8fafc;
+    --brand: #1f3a8a; --brand-fg: #ffffff; --accent: #facc15; --ok: #15803d; --err: #b91c1c; --err-bg: #fef2f2;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0f172a; --fg: #e2e8f0; --muted: #94a3b8; --line: #1e293b; --card: #1e293b;
+      --brand: #3b5bdb; --ok: #4ade80; --err: #f87171; --err-bg: #2a1215;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { width: 300px; margin: 0; background: var(--bg); color: var(--fg);
+         font: 13px/1.5 -apple-system, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif; }
+  header { display: flex; align-items: center; gap: 8px; padding: 12px 14px; border-bottom: 1px solid var(--line); }
+  header img { width: 20px; height: 20px; }
+  header h1 { font-size: 14px; margin: 0; flex: 1; }
+  .chip { font-size: 11px; color: var(--muted); background: var(--card); border: 1px solid var(--line);
+          border-radius: 999px; padding: 2px 8px; }
+  main { padding: 14px; }
+  h2 { font-size: 15px; margin: 0 0 6px; }
+  p { margin: 0 0 10px; color: var(--muted); }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; margin-bottom: 12px; }
+  .row { display: flex; justify-content: space-between; padding: 2px 0; }
+  .row span:first-child { color: var(--muted); }
+  .warn { color: var(--err); margin-top: 6px; }
+  button { width: 100%; border: 0; border-radius: 8px; padding: 9px; font: inherit; font-weight: 600; cursor: pointer;
+           background: var(--brand); color: var(--brand-fg); }
+  button.sub { background: transparent; color: var(--fg); border: 1px solid var(--line); font-weight: 500; margin-top: 8px; }
+  button:disabled { opacity: .45; cursor: default; }
+  button:focus-visible, input:focus-visible, a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  input { width: 100%; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg);
+          color: var(--fg); font: inherit; margin-bottom: 8px; }
+  .steps { list-style: none; margin: 0 0 10px; padding: 0; }
+  .steps li { display: flex; align-items: center; gap: 8px; padding: 4px 0; color: var(--muted); }
+  .steps li i { width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--line); flex: none;
+                display: grid; place-items: center; font-style: normal; font-size: 11px; }
+  .steps li.done { color: var(--fg); } .steps li.done i { border-color: var(--ok); color: var(--ok); }
+  .steps li.now { color: var(--fg); font-weight: 600; }
+  .steps li.now i { border-color: var(--brand); border-top-color: transparent; animation: spin .9s linear infinite; }
+  .steps li small { margin-left: auto; font-weight: 400; color: var(--muted); }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .big { font-size: 28px; line-height: 1; margin-bottom: 8px; color: var(--ok); }
+  .error { background: var(--err-bg); border-color: transparent; color: var(--err); }
+  details { margin-top: 8px; color: var(--muted); font-size: 11px; word-break: break-all; }
+  footer { border-top: 1px solid var(--line); padding: 8px 14px; text-align: right; }
+  footer a { color: var(--muted); font-size: 12px; text-decoration: none; }
+</style>
+<header>
+  <img src="icons/icon32.png" alt="">
+  <h1>미리 자막</h1>
+  <span class="chip" id="credits" hidden></span>
+</header>
+<main id="main" aria-live="polite"></main>
+<footer><a href="#" id="opt">설정</a></footer>
+<script src="popup.js"></script>
+</html>

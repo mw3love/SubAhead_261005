@@ -1,0 +1,13 @@
+{
+  "manifest_version": 3,
+  "name": "미리 자막",
+  "version": "0.1",
+  "description": "페이지의 HTML5 영상 전체를 미리 받아 적어, 어디로 넘겨도 맞는 자막을 띄운다.",
+  "permissions": ["webRequest", "scripting", "storage", "activeTab"],
+  "host_permissions": ["<all_urls>"],
+  "background": { "service_worker": "background.js" },
+  "action": { "default_popup": "popup.html" },
+  "content_scripts": [
+    { "matches": ["<all_urls>"], "js": ["content.js"], "all_frames": true, "run_at": "document_idle" }
+  ]
+}

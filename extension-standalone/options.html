@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="ko">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>미리 자막 설정</title>
+<style>
+  :root {
+    --bg: #ffffff; --fg: #0f172a; --muted: #64748b; --line: #e2e8f0; --card: #f8fafc;
+    --brand: #1f3a8a; --brand-fg: #ffffff; --accent: #facc15; --ok: #15803d; --err: #b91c1c;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #0f172a; --fg: #e2e8f0; --muted: #94a3b8; --line: #1e293b; --card: #1e293b;
+            --brand: #3b5bdb; --ok: #4ade80; --err: #f87171; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--fg);
+         font: 14px/1.6 -apple-system, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif; }
+  .wrap { max-width: 720px; margin: 0 auto; padding: 28px 16px 60px; }
+  header { display: flex; align-items: center; gap: 10px; margin-bottom: 24px; }
+  header img { width: 32px; height: 32px; }
+  header h1 { font-size: 20px; margin: 0; }
+  section { border: 1px solid var(--line); border-radius: 14px; padding: 18px 20px; margin-bottom: 18px; }
+  h2 { font-size: 16px; margin: 0 0 4px; }
+  .desc { color: var(--muted); margin: 0 0 14px; }
+  .preview { position: relative; border-radius: 10px; overflow: hidden; background: #000; margin-bottom: 16px; }
+  .preview video { display: block; width: 100%; aspect-ratio: 16 / 9; }
+  .field { display: grid; grid-template-columns: 110px 1fr; align-items: center; gap: 10px; margin: 10px 0; border: 0; padding: 0; }
+  .field legend { float: left; width: 110px; color: var(--muted); padding: 0; }
+  .seg { display: flex; flex-wrap: wrap; gap: 6px; }
+  .seg label { position: relative; }
+  .seg input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
+  .seg span { display: inline-block; padding: 5px 12px; border: 1px solid var(--line); border-radius: 999px; background: var(--card); }
+  .seg input:checked + span { background: var(--brand); color: var(--brand-fg); border-color: var(--brand); }
+  .seg input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .sw { width: 14px; height: 14px; border-radius: 50%; display: inline-block; vertical-align: -2px; margin-right: 6px;
+        border: 1px solid rgba(0,0,0,.25); }
+  button { border: 0; border-radius: 8px; padding: 8px 14px; font: inherit; font-weight: 600; cursor: pointer;
+           background: var(--brand); color: var(--brand-fg); }
+  button.sub { background: transparent; color: var(--fg); border: 1px solid var(--line); font-weight: 500; }
+  button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .actions { display: flex; justify-content: flex-end; margin-top: 8px; }
+  table { width: 100%; border-collapse: collapse; margin-bottom: 12px; }
+  td { padding: 7px 0; border-bottom: 1px solid var(--line); }
+  td:last-child { text-align: right; }
+  kbd { font: 12px ui-monospace, Menlo, monospace; background: var(--card); border: 1px solid var(--line);
+        border-radius: 6px; padding: 2px 7px; }
+  .none { color: var(--muted); }
+  .keyrow { display: flex; gap: 8px; }
+  .keyrow input { flex: 1; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg);
+                  color: var(--fg); font: inherit; }
+  #keymsg { margin-top: 8px; min-height: 1.6em; }
+  #keymsg.ok { color: var(--ok); } #keymsg.err { color: var(--err); }
+  .list { list-style: none; margin: 0; padding: 0; }
+  .list li { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+  .list li:last-child { border-bottom: 0; }
+  .list .info { flex: 1; min-width: 0; }
+  .list .title { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .list .meta { color: var(--muted); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .list .empty { color: var(--muted); justify-content: center; border: 0; }
+  button.small { padding: 5px 10px; font-size: 12px; }
+  button.danger { color: var(--err); border-color: var(--err); }
+  @media (max-width: 520px) {
+    .field { grid-template-columns: 1fr; }
+    .field legend { float: none; width: auto; margin-bottom: 4px; }
+  }
+</style>
+<div class="wrap">
+  <header><img src="icons/icon48.png" alt=""><h1>미리 자막 설정</h1></header>
+
+  <section aria-labelledby="h-style">
+    <h2 id="h-style">자막 모양</h2>
+    <p class="desc">바꾸면 열려 있는 영상의 자막에도 바로 적용돼요.</p>
+    <div class="preview"><video id="pv" src="assets/preview.mp4" muted loop autoplay playsinline></video></div>
+    <div id="controls"></div>
+    <div class="actions"><button id="reset" class="sub">기본값으로</button></div>
+  </section>
+
+  <section aria-labelledby="h-keys">
+    <h2 id="h-keys">단축키</h2>
+    <p class="desc">영상을 보는 중에 누르면 돼요. 키는 Chrome 단축키 설정에서 바꿀 수 있어요.</p>
+    <table id="cmds"></table>
+    <button id="shortcuts" class="sub">단축키 바꾸기</button>
+  </section>
+
+  <section aria-labelledby="h-saved">
+    <h2 id="h-saved">저장된 자막</h2>
+    <p class="desc" id="savedsum">한 번 만든 자막은 여기 저장돼서, 같은 영상을 다시 열면 크레딧 없이 바로 붙어요.</p>
+    <ul id="saved" class="list"></ul>
+    <div class="actions"><button id="clearall" class="sub danger" hidden>모두 지우기</button></div>
+  </section>
+
+  <section aria-labelledby="h-api">
+    <h2 id="h-api">게이트웨이 키</h2>
+    <p class="desc" id="keystate">JBNU 게이트웨이 API 키. 이 브라우저에만 저장돼요.</p>
+    <div class="keyrow">
+      <label for="key" hidden>API 키</label>
+      <input id="key" type="password" placeholder="새 키 붙여넣기" autocomplete="off">
+      <button id="save">저장</button>
+    </div>
+    <div id="keymsg" role="status"></div>
+  </section>
+</div>
+<script src="cue-style.js"></script>
+<script src="options.js"></script>
+</html>
