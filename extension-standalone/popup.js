@@ -22,17 +22,20 @@ function renderKey(error) {
   main.innerHTML = `
     <h2>${t("popupKeyTitle")}</h2>
     <p>${t("popupKeyDesc")}</p>
-    <label for="key" hidden>${t("apiKeyLabel")}</label>
+    <label for="baseurl" class="lbl">${t("baseUrlLabel")}</label>
+    <input id="baseurl" type="url" placeholder="${t("baseUrlPlaceholder")}" value="${esc(info && info.baseUrl)}" autocomplete="off" spellcheck="false">
+    <label for="key" class="lbl">${t("apiKeyLabel")}</label>
     <input id="key" type="password" placeholder="${t("keyPlaceholder")}" autocomplete="off">
     <button id="save">${t("saveAndStart")}</button>
     ${error ? `<p class="warn" role="alert">${esc(error)}</p>` : ""}`;
   const input = document.getElementById("key");
-  input.focus();
+  const urlInput = document.getElementById("baseurl");
+  (urlInput.value ? input : urlInput).focus();
   const save = async () => {
     const btn = document.getElementById("save");
     btn.disabled = true;
     btn.textContent = t("checking");
-    const r = await chrome.runtime.sendMessage({ type: "saveKey", apiKey: input.value.trim() });
+    const r = await chrome.runtime.sendMessage({ type: "saveKey", baseUrl: urlInput.value.trim(), apiKey: input.value.trim() });
     if (r.ok) load();
     else renderKey(r.message);
   };
@@ -65,7 +68,7 @@ function renderReady() {
     main.innerHTML = `
       <div class="card">
         <div class="row"><span>${t("videoLength")}</span><span>${info.duration ? fmtDur(info.duration) : t("unknown")}</span></div>
-        <div class="row"><span>${t("estCost")}</span><span>${info.estimate != null ? t("aboutCredits", fmtNum(info.estimate)) : t("unknown")}</span></div>
+        ${info.estimate != null ? `<div class="row"><span>${t("estCost")}</span><span>${t("aboutCredits", fmtNum(info.estimate))}</span></div>` : ""}
         ${short ? `<div class="warn">${t("notEnough")}</div>` : ""}
       </div>
       <button id="go" ${short ? "disabled" : ""}>${t("makeAll")}</button>`;

@@ -49,6 +49,9 @@
   .keyrow input { flex: 1; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg);
                   color: var(--fg); font: inherit; }
   #keymsg { margin-top: 8px; min-height: 1.6em; }
+  .lbl { display: block; color: var(--muted); font-size: 13px; margin: 10px 0 4px; }
+  input.wide { width: 100%; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg);
+               color: var(--fg); font: inherit; }
   #keymsg.ok { color: var(--ok); } #keymsg.err { color: var(--err); }
   .list { list-style: none; margin: 0; padding: 0; }
   .list li { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--line); }
@@ -92,10 +95,12 @@
   <section aria-labelledby="h-api">
     <h2 id="h-api" data-i18n="apiTitle"></h2>
     <p class="desc" id="keystate" data-i18n="apiDesc"></p>
+    <label for="baseurl" class="lbl" data-i18n="baseUrlLabel"></label>
+    <input id="baseurl" class="wide" type="url" data-i18n-placeholder="baseUrlPlaceholder" autocomplete="off" spellcheck="false">
+    <label for="key" class="lbl" data-i18n="apiKeyLabel"></label>
     <div class="keyrow">
-      <label for="key" hidden data-i18n="apiKeyLabel"></label>
       <input id="key" type="password" data-i18n-placeholder="newKeyPlaceholder" autocomplete="off">
-      <button id="save" data-i18n="save"></button>
+      <button id="save" data-i18n="saveAndStart"></button>
     </div>
     <div id="keymsg" role="status"></div>
   </section>

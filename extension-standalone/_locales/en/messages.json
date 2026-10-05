@@ -3,7 +3,7 @@
     "message": "Miri Subtitles"
   },
   "extDesc": {
-    "message": "Transcribes a video's audio ahead of time so Korean subtitles stay in sync wherever you seek. Requires your own JBNU gateway key."
+    "message": "Transcribes a video's audio ahead of time so Korean subtitles stay in sync wherever you seek. Requires your own API gateway address and key."
   },
   "trackLabel": {
     "message": "Miri Subtitles"
@@ -48,7 +48,7 @@
     "message": "Transcribe"
   },
   "errNO_KEY": {
-    "message": "Please enter your gateway key first."
+    "message": "Please enter your API gateway address and key first."
   },
   "errNO_VIDEO": {
     "message": "No video found on this page. Play the video briefly, then try again."
@@ -106,10 +106,16 @@
     }
   },
   "keyNoModel": {
-    "message": "This key can't use the speech recognition model."
+    "message": "This server doesn't provide the required speech recognition model (stt-async-v5)."
   },
   "keyOffline": {
-    "message": "Please check your internet connection."
+    "message": "Couldn't reach the server. Please check the address and your internet connection."
+  },
+  "urlInvalid": {
+    "message": "The address isn't valid. Please enter an address starting with https://."
+  },
+  "keyEmpty": {
+    "message": "Please enter an API key."
   },
   "toastTitle": {
     "message": "Miri Subtitles · $P1$",
@@ -221,10 +227,16 @@
     "message": "Top"
   },
   "popupKeyTitle": {
-    "message": "A key is needed to start"
+    "message": "Connect an API gateway"
   },
   "popupKeyDesc": {
-    "message": "Enter your JBNU gateway API key. It's stored only in this browser."
+    "message": "Enter the address and key of an API gateway that provides the stt-async-v5 speech recognition model. They're stored only in this browser."
+  },
+  "baseUrlLabel": {
+    "message": "Address (Base URL)"
+  },
+  "baseUrlPlaceholder": {
+    "message": "https://…/v1/gateway"
   },
   "apiKeyLabel": {
     "message": "API key"
@@ -233,7 +245,7 @@
     "message": "Paste your API key"
   },
   "saveAndStart": {
-    "message": "Save and start"
+    "message": "Save and test connection"
   },
   "checking": {
     "message": "Checking…"
@@ -317,7 +329,7 @@
     "message": "Try again"
   },
   "rekey": {
-    "message": "Enter key again"
+    "message": "Set up connection again"
   },
   "details": {
     "message": "Details"
@@ -459,24 +471,27 @@
     "message": "Delete everything? Click again to confirm"
   },
   "apiTitle": {
-    "message": "Gateway key"
+    "message": "API gateway"
   },
   "apiDesc": {
-    "message": "Your JBNU gateway API key. It's stored only in this browser."
+    "message": "The address and key of an API gateway that provides the stt-async-v5 speech recognition model. Stored only in this browser."
   },
   "keySaved": {
-    "message": "Saved key: ••••$P1$ · stored only in this browser.",
+    "message": "Connected: $P1$ · key ••••$P2$",
     "placeholders": {
       "p1": {
         "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
       }
     }
   },
   "keyNone": {
-    "message": "No key yet. Please enter your JBNU gateway API key."
+    "message": "No gateway connected yet."
   },
   "newKeyPlaceholder": {
-    "message": "Paste a new key"
+    "message": "New key (only to change it)"
   },
   "save": {
     "message": "Save"

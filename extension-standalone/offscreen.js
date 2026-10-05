@@ -3,13 +3,13 @@
 // 영상 받기·소리 뽑기는 media.js 에 있다.
 import { AppError, download, extractAudio } from "./media.js";
 
-const GATEWAY = "https://factchat-cloud.mindlogic.ai/v1/gateway";
 const MODEL = "stt-async-v5";
 
-async function fetchGateway(path, opts) {
+// 사용자가 설정한 API 게이트웨이로 요청한다
+async function fetchGateway(baseUrl, path, opts) {
   let r;
   try {
-    r = await fetch(GATEWAY + path, opts);
+    r = await fetch(baseUrl + path, opts);
   } catch (e) {
     throw new AppError("NETWORK", e.message);
   }
@@ -21,19 +21,19 @@ async function fetchGateway(path, opts) {
   throw new AppError("STT_FAILED", "gateway " + r.status + ": " + body);
 }
 
-async function transcribe(audio, apiKey, report) {
+async function transcribe(audio, { baseUrl, apiKey }, report) {
   const auth = { Authorization: "Bearer " + apiKey };
   report("upload", (audio.length / 1e6).toFixed(1) + " MB");
   const form = new FormData();
   form.append("model", MODEL);
   form.append("language", "ko");
   form.append("file", new Blob([audio], { type: "audio/mp4" }), "audio.m4a");
-  const r = await fetchGateway("/audio/transcriptions/", { method: "POST", headers: auth, body: form });
+  const r = await fetchGateway(baseUrl, "/audio/transcriptions/", { method: "POST", headers: auth, body: form });
   if (!r.operation_id) throw new AppError("STT_FAILED", "no operation_id: " + JSON.stringify(r).slice(0, 200));
   while (true) {
     await new Promise((res) => setTimeout(res, 3000));
     report("transcribe", "");
-    const st = await fetchGateway("/audio/transcriptions/" + r.operation_id + "/", { headers: auth });
+    const st = await fetchGateway(baseUrl, "/audio/transcriptions/" + r.operation_id + "/", { headers: auth });
     if (st.status === "completed") return { segments: st.segments || [], credits: r.credits_charged };
     if (st.status === "failed" || st.status === "error")
       throw new AppError("STT_FAILED", JSON.stringify(st).slice(0, 200));
@@ -42,14 +42,14 @@ async function transcribe(audio, apiKey, report) {
 
 chrome.runtime.onMessage.addListener((msg) => {
   if (msg.target !== "offscreen" || msg.type !== "transcribe") return;
-  const { tabId, url, apiKey } = msg;
+  const { tabId, url, baseUrl, apiKey } = msg;
   const report = (stage, detail) => chrome.runtime.sendMessage({ type: "progress", tabId, url, stage, detail });
   (async () => {
     try {
       report("download", "");
       const media = await download(url, report);
       const audio = await extractAudio(media, report);
-      const { segments, credits } = await transcribe(audio, apiKey, report);
+      const { segments, credits } = await transcribe(audio, { baseUrl, apiKey }, report);
       chrome.runtime.sendMessage({ type: "result", tabId, url, segments, credits });
     } catch (e) {
       chrome.runtime.sendMessage({ type: "failed", tabId, url, code: e.code || "UNKNOWN", detail: e.code ? e.detail : String(e.message || e) });

@@ -1,9 +1,8 @@
 // 영상 주소를 찾아 offscreen 문서(ffmpeg.wasm)에 자막 작업을 맡기고, 결과를 자막 줄로 나눠 영상에 붙인다.
 // 진행 상황은 job:<tabId> 에 저장하고, 아이콘 배지와 영상 위 알림으로도 보여 준다.
-const GATEWAY = "https://factchat-cloud.mindlogic.ai/v1/gateway";
 const MEDIA_RE = /\.(m3u8|mp4|m4v|webm)(\?|$)/i;
 const MAX_CUE_CHARS = 40;
-const CREDITS_PER_SEC = 0.1; // Soniox stt-async-v5 실측
+const CREDITS_PER_SEC = 0.1; // stt-async-v5 실측 단가(크레딧 정보를 주는 게이트웨이에서만 예상 비용으로 씀)
 
 
 // 화면에 보일 문구는 _locales 에 있다(브라우저 언어에 따라 한국어/영어).
@@ -126,9 +125,29 @@ async function ensureOffscreen() {
   });
 }
 
-async function fetchCredits(apiKey) {
+// 사용자가 설정한 API 게이트웨이(주소·키). 음성인식 모델 stt-async-v5 를 제공해야 한다.
+async function getServer() {
+  const { baseUrl, apiKey } = await chrome.storage.local.get(["baseUrl", "apiKey"]);
+  return baseUrl && apiKey ? { baseUrl, apiKey } : null;
+}
+
+// https 만 허용(개발용 localhost 는 http 도 허용), 끝의 / 는 뗀다
+function normalizeBaseUrl(raw) {
+  let u;
   try {
-    const r = await fetch(GATEWAY + "/credits/", { headers: { Authorization: "Bearer " + apiKey } });
+    u = new URL(String(raw || "").trim());
+  } catch {
+    return null;
+  }
+  const local = ["localhost", "127.0.0.1", "[::1]"].includes(u.hostname);
+  if (u.protocol !== "https:" && !(u.protocol === "http:" && local)) return null;
+  return u.href.replace(/\/+$/, "");
+}
+
+// 크레딧 정보를 주는 게이트웨이면 남은 크레딧을, 아니면 null
+async function fetchCredits(server) {
+  try {
+    const r = await fetch(server.baseUrl + "/credits/", { headers: { Authorization: "Bearer " + server.apiKey } });
     if (!r.ok) return null;
     return (await r.json()).total.remaining;
   } catch {
@@ -138,9 +157,10 @@ async function fetchCredits(apiKey) {
 
 async function info(tabId) {
   // 팝업이 열릴 때 보여 줄 것: 키 여부, 영상 길이, 예상 비용, 남은 크레딧, 저장된 자막 여부, 진행 중 작업.
-  const { apiKey } = await chrome.storage.local.get("apiKey");
+  const server = await getServer();
+  const { baseUrl } = await chrome.storage.local.get("baseUrl");
   const job = (await chrome.storage.session.get("job:" + tabId))["job:" + tabId] || null;
-  if (!apiKey) return { hasKey: false, job };
+  if (!server) return { hasKey: false, job, baseUrl: baseUrl || "" };
   let videos = [];
   try {
     videos = await findVideos(tabId);
@@ -151,22 +171,29 @@ async function info(tabId) {
   const live = videos.length > 0 && videos[0].duration === Infinity;
   const duration = videos.length && isFinite(videos[0].duration) ? videos[0].duration : null;
   const cached = url ? !!(await chrome.storage.local.get("cues:" + url))["cues:" + url] : false;
+  const remaining = await fetchCredits(server);
   return {
     hasKey: true,
     job,
     url,
     duration,
     live,
-    estimate: duration ? Math.max(1, Math.ceil(duration * CREDITS_PER_SEC)) : null,
+    estimate: duration && remaining != null ? Math.max(1, Math.ceil(duration * CREDITS_PER_SEC)) : null,
     cached,
-    remaining: await fetchCredits(apiKey),
+    remaining,
+    baseUrl: server.baseUrl,
   };
 }
 
-async function saveKey(apiKey) {
-  // 크레딧이 들지 않는 모델 목록 요청으로 키를 확인한 뒤 저장한다.
+async function saveServer(rawUrl, apiKey) {
+  // 주소 형식을 보고, 크레딧이 들지 않는 모델 목록 요청으로 키와 모델을 확인한 뒤 저장한다.
+  // 키 칸이 비어 있으면 저장된 키를 그대로 쓴다(주소만 바꿀 때).
+  const baseUrl = normalizeBaseUrl(rawUrl);
+  if (!baseUrl) return { ok: false, message: t("urlInvalid") };
+  apiKey = apiKey || (await chrome.storage.local.get("apiKey")).apiKey;
+  if (!apiKey) return { ok: false, message: t("keyEmpty") };
   try {
-    const r = await fetch(GATEWAY + "/models/", { headers: { Authorization: "Bearer " + apiKey } });
+    const r = await fetch(baseUrl + "/models/", { headers: { Authorization: "Bearer " + apiKey } });
     if (r.status === 401 || r.status === 403) return { ok: false, message: t("keyWrong") };
     if (!r.ok) return { ok: false, message: t("keyCheckFailed", r.status) };
     const ids = ((await r.json()).data || []).map((m) => m.id);
@@ -174,7 +201,7 @@ async function saveKey(apiKey) {
   } catch {
     return { ok: false, message: t("keyOffline") };
   }
-  await chrome.storage.local.set({ apiKey });
+  await chrome.storage.local.set({ baseUrl, apiKey });
   return { ok: true };
 }
 
@@ -198,9 +225,9 @@ async function autoAttach(tabId, frameId, video) {
 // 영상 서버가 "어느 페이지에서 왔는지"를 확인하는 경우를 위해, 확장이 영상을 받을 때
 // Referer·Origin 을 영상이 있던 페이지로 맞춘다. 게이트웨이 요청에는 붙이지 않는다.
 const REFERER_RULE = 1;
-async function setReferer(page) {
+async function setReferer(page, baseUrl) {
   const addRules = [];
-  if (/^https?:/.test(page || "")) {
+  if (/^https?:/.test(page || "") && baseUrl) {
     addRules.push({
       id: REFERER_RULE,
       priority: 1,
@@ -213,7 +240,7 @@ async function setReferer(page) {
       },
       condition: {
         initiatorDomains: [chrome.runtime.id],
-        excludedRequestDomains: [new URL(GATEWAY).hostname],
+        excludedRequestDomains: [new URL(baseUrl).hostname],
         resourceTypes: ["xmlhttprequest", "media", "other"],
       },
     });
@@ -222,8 +249,8 @@ async function setReferer(page) {
 }
 
 async function start(tabId) {
-  const { apiKey } = await chrome.storage.local.get("apiKey");
-  if (!apiKey) return fail(tabId, null, "NO_KEY");
+  const server = await getServer();
+  if (!server) return fail(tabId, null, "NO_KEY");
   let videos = [];
   try {
     videos = await findVideos(tabId);
@@ -239,9 +266,9 @@ async function start(tabId) {
   }
   await setJob(tabId, { status: "running", stage: "download", detail: "", url, startedAt: Date.now() });
   const tab = await chrome.tabs.get(tabId).catch(() => null);
-  await setReferer((videos[0] && videos[0].page) || (tab && tab.url));
+  await setReferer((videos[0] && videos[0].page) || (tab && tab.url), server.baseUrl);
   await ensureOffscreen();
-  chrome.runtime.sendMessage({ target: "offscreen", type: "transcribe", tabId, url, apiKey });
+  chrome.runtime.sendMessage({ target: "offscreen", type: "transcribe", tabId, url, ...server });
 }
 
 chrome.runtime.onMessage.addListener((msg, sender, reply) => {
@@ -250,7 +277,7 @@ chrome.runtime.onMessage.addListener((msg, sender, reply) => {
     return true;
   }
   if (msg.type === "saveKey") {
-    saveKey(msg.apiKey).then(reply);
+    saveServer(msg.baseUrl, msg.apiKey).then(reply);
     return true;
   }
   if (msg.type === "start") start(msg.tabId);

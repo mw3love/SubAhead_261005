@@ -143,16 +143,17 @@ chrome.storage.onChanged.addListener((ch, area) => {
 });
 
 async function renderKeyState() {
-  const { apiKey } = await chrome.storage.local.get("apiKey");
-  $("keystate").textContent = apiKey
-    ? t("keySaved", apiKey.slice(-4))
+  const { apiKey, baseUrl } = await chrome.storage.local.get(["apiKey", "baseUrl"]);
+  if (baseUrl && !$("baseurl").value) $("baseurl").value = baseUrl;
+  $("keystate").textContent = apiKey && baseUrl
+    ? t("keySaved", new URL(baseUrl).host, apiKey.slice(-4))
     : t("keyNone");
 }
 $("save").onclick = async () => {
   const msg = $("keymsg");
   msg.className = "";
   msg.textContent = t("checking");
-  const r = await chrome.runtime.sendMessage({ type: "saveKey", apiKey: $("key").value.trim() });
+  const r = await chrome.runtime.sendMessage({ type: "saveKey", baseUrl: $("baseurl").value.trim(), apiKey: $("key").value.trim() });
   msg.className = r.ok ? "ok" : "err";
   msg.textContent = r.ok ? t("keySavedOk") : "✗ " + r.message;
   if (r.ok) $("key").value = "";
