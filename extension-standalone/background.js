@@ -14,6 +14,7 @@ const ERRORS = {
   NO_CREDIT: { message: "크레딧이 모자라요. 다음 달 충전 후 다시 시도해 주세요.", action: null },
   MEDIA_BLOCKED: { message: "이 사이트가 영상 받기를 막았어요. 이 사이트에서는 자막을 만들 수 없어요.", action: "retry" },
   ENCRYPTED: { message: "보호(암호화)된 영상이라 자막을 만들 수 없어요.", action: null },
+  LIVE: { message: "생방송은 아직 지원하지 않아요. 다시보기 영상에서 사용해 주세요.", action: null },
   NETWORK: { message: "인터넷 연결이 끊겼거나 서버에 닿지 못했어요.", action: "retry" },
   FFMPEG: { message: "영상에서 소리를 뽑지 못했어요. 지원하지 않는 영상 형식일 수 있어요.", action: "retry" },
   STT_FAILED: { message: "받아 적기 서버에서 오류가 났어요. 잠시 뒤 다시 시도해 주세요.", action: "retry" },
@@ -53,6 +54,7 @@ async function findVideos(tabId) {
         src: v.currentSrc,
         area: v.clientWidth * v.clientHeight,
         duration: v.duration,
+        page: location.href, // 영상이 있는 프레임 주소(받을 때 Referer 로 쓴다)
       })),
   });
   return results.flatMap((r) => r.result || []).sort((a, b) => b.area - a.area);
@@ -152,6 +154,7 @@ async function info(tabId) {
     // chrome:// 같은 페이지는 스크립트를 넣을 수 없다
   }
   const url = await pickSource(tabId, videos);
+  const live = videos.length > 0 && videos[0].duration === Infinity;
   const duration = videos.length && isFinite(videos[0].duration) ? videos[0].duration : null;
   const cached = url ? !!(await chrome.storage.local.get("cues:" + url))["cues:" + url] : false;
   return {
@@ -159,6 +162,7 @@ async function info(tabId) {
     job,
     url,
     duration,
+    live,
     estimate: duration ? Math.max(1, Math.ceil(duration * CREDITS_PER_SEC)) : null,
     cached,
     remaining: await fetchCredits(apiKey),
@@ -197,6 +201,32 @@ async function autoAttach(tabId, frameId, video) {
   await setJob(tabId, { status: "done", message: "저장된 자막을 붙였어요.", lines: cached.length, url });
 }
 
+// 영상 서버가 "어느 페이지에서 왔는지"를 확인하는 경우를 위해, 확장이 영상을 받을 때
+// Referer·Origin 을 영상이 있던 페이지로 맞춘다. 게이트웨이 요청에는 붙이지 않는다.
+const REFERER_RULE = 1;
+async function setReferer(page) {
+  const addRules = [];
+  if (/^https?:/.test(page || "")) {
+    addRules.push({
+      id: REFERER_RULE,
+      priority: 1,
+      action: {
+        type: "modifyHeaders",
+        requestHeaders: [
+          { header: "referer", operation: "set", value: page },
+          { header: "origin", operation: "set", value: new URL(page).origin },
+        ],
+      },
+      condition: {
+        initiatorDomains: [chrome.runtime.id],
+        excludedRequestDomains: [new URL(GATEWAY).hostname],
+        resourceTypes: ["xmlhttprequest", "media", "other"],
+      },
+    });
+  }
+  await chrome.declarativeNetRequest.updateSessionRules({ removeRuleIds: [REFERER_RULE], addRules });
+}
+
 async function start(tabId) {
   const { apiKey } = await chrome.storage.local.get("apiKey");
   if (!apiKey) return fail(tabId, null, "NO_KEY");
@@ -206,6 +236,7 @@ async function start(tabId) {
   } catch {}
   const url = await pickSource(tabId, videos);
   if (!url) return fail(tabId, null, "NO_VIDEO");
+  if (videos.length && videos[0].duration === Infinity) return fail(tabId, url, "LIVE");
   const cacheKey = "cues:" + url;
   const cached = (await chrome.storage.local.get(cacheKey))[cacheKey];
   if (cached) {
@@ -213,6 +244,8 @@ async function start(tabId) {
     return setJob(tabId, { status: "done", message: "저장된 자막을 불러왔어요.", lines: cached.length, url });
   }
   await setJob(tabId, { status: "running", stage: "download", detail: "", url, startedAt: Date.now() });
+  const tab = await chrome.tabs.get(tabId).catch(() => null);
+  await setReferer((videos[0] && videos[0].page) || (tab && tab.url));
   await ensureOffscreen();
   chrome.runtime.sendMessage({ target: "offscreen", type: "transcribe", tabId, url, apiKey });
 }
@@ -234,8 +267,12 @@ chrome.runtime.onMessage.addListener((msg, sender, reply) => {
       setJob(msg.tabId, { status: "running", stage: msg.stage, detail: msg.detail, url: msg.url, startedAt: prev.startedAt });
     });
   }
-  if (msg.type === "failed") fail(msg.tabId, msg.url, msg.code, msg.detail);
+  if (msg.type === "failed") {
+    setReferer(null);
+    fail(msg.tabId, msg.url, msg.code, msg.detail);
+  }
   if (msg.type === "result") {
+    setReferer(null);
     (async () => {
       const cues = toCues(msg.segments);
       // 설정 페이지의 "저장된 자막" 목록에 보여 줄 정보도 함께 저장한다

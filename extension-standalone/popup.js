@@ -47,6 +47,12 @@ function renderReady() {
     document.getElementById("again").onclick = load;
     return;
   }
+  if (info.live) {
+    main.innerHTML = `
+      <h2>생방송은 아직 지원하지 않아요</h2>
+      <p>끝이 정해지지 않은 영상이라 전체 자막을 미리 만들 수 없어요. 다시보기 영상에서 사용해 주세요.</p>`;
+    return;
+  }
   if (info.cached) {
     main.innerHTML = `
       <div class="card"><div class="row"><span>저장된 자막</span><span>있음</span></div>

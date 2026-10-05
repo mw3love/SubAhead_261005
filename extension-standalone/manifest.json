@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "미리 자막",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "영상 소리를 미리 받아 적어, 어디로 넘겨도 맞는 한국어 자막을 띄웁니다. 본인 JBNU 게이트웨이 키가 필요합니다.",
   "icons": {
     "16": "icons/icon16.png",
@@ -14,7 +14,8 @@
     "scripting",
     "storage",
     "offscreen",
-    "activeTab"
+    "activeTab",
+    "declarativeNetRequestWithHostAccess"
   ],
   "host_permissions": [
     "<all_urls>"

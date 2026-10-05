@@ -27,7 +27,8 @@ async function getFFmpeg() {
 async function fetchMedia(url) {
   let r;
   try {
-    r = await fetch(url);
+    // 로그인이 필요한 영상을 위해 그 사이트 쿠키도 함께 보낸다
+    r = await fetch(url, { credentials: "include" });
   } catch (e) {
     throw new AppError("NETWORK", e.message + ": " + url.slice(0, 80));
   }
@@ -70,6 +71,8 @@ async function download(url, report) {
   }
   for (const m of text.matchAll(/#EXT-X-KEY:([^\n]*)/g))
     if (!m[1].includes("METHOD=NONE")) throw new AppError("ENCRYPTED");
+  // 끝 표시가 없는 재생목록은 생방송(계속 늘어남)이라 받지 않는다
+  if (!text.includes("#EXT-X-ENDLIST")) throw new AppError("LIVE");
 
   const parts = [];
   const init = text.match(/#EXT-X-MAP:[^\n]*URI="([^"]+)"/);

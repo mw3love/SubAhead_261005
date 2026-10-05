@@ -1,0 +1,14 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>미리 자막 HLS 시험</title>
+<style>body{font-family:-apple-system,sans-serif;max-width:860px;margin:24px auto;padding:0 16px}video{width:100%;background:#111;aspect-ratio:16/9}</style>
+<h1>HLS 시험 (hls.js)</h1>
+<p>실제 사이트처럼 hls.js 로 재생해서 video 주소가 blob: 이 된다. ?live=1 이면 생방송 흉내.</p>
+<video id="v" controls muted></video>
+<script src="https://cdn.jsdelivr.net/npm/hls.js@1/dist/hls.min.js"></script>
+<script>
+  const live = new URLSearchParams(location.search).has("live");
+  const hls = new Hls();
+  hls.loadSource(live ? "v1/live.m3u8" : "master.m3u8");
+  hls.attachMedia(document.getElementById("v"));
+</script>
