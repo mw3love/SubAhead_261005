@@ -42,7 +42,7 @@ async function transcribe(audio, { baseUrl, apiKey }, report) {
 
 chrome.runtime.onMessage.addListener((msg) => {
   if (msg.target !== "offscreen" || msg.type !== "transcribe") return;
-  const { tabId, url, baseUrl, apiKey } = msg;
+  const { tabId, frameId, url, baseUrl, apiKey } = msg;
   const report = (stage, detail) => chrome.runtime.sendMessage({ type: "progress", tabId, url, stage, detail });
   (async () => {
     try {
@@ -50,7 +50,7 @@ chrome.runtime.onMessage.addListener((msg) => {
       const media = await download(url, report);
       const audio = await extractAudio(media, report);
       const { segments, credits } = await transcribe(audio, { baseUrl, apiKey }, report);
-      chrome.runtime.sendMessage({ type: "result", tabId, url, segments, credits });
+      chrome.runtime.sendMessage({ type: "result", tabId, frameId, url, segments, credits });
     } catch (e) {
       chrome.runtime.sendMessage({ type: "failed", tabId, url, code: e.code || "UNKNOWN", detail: e.code ? e.detail : String(e.message || e) });
     }

@@ -50,7 +50,8 @@ async function findVideos(tabId) {
         page: location.href, // 영상이 있는 프레임 주소(받을 때 Referer 로 쓴다)
       })),
   });
-  return results.flatMap((r) => r.result || []).sort((a, b) => b.area - a.area);
+  // frameId: 영상이 있는 프레임. 만든 자막을 그 프레임에만 보낼 때 쓴다.
+  return results.flatMap((r) => (r.result || []).map((v) => ({ ...v, frameId: r.frameId }))).sort((a, b) => b.area - a.area);
 }
 
 async function pickSource(tabId, videos) {
@@ -269,17 +270,20 @@ async function start(tabId) {
   const url = await pickSource(tabId, videos);
   if (!url) return fail(tabId, null, "NO_VIDEO");
   if (videos.length && videos[0].duration === Infinity) return fail(tabId, url, "LIVE");
+  // 고른 영상이 있는 프레임(영상 주소로 찾는다). 못 찾으면(m3u8 등) 모든 프레임에 보낸다.
+  const source = videos.find((v) => v.src === url);
+  const frameId = source ? source.frameId : null;
   const cacheKey = "cues:" + url;
   const cached = (await chrome.storage.local.get(cacheKey))[cacheKey];
   if (cached) {
-    await sendCues(tabId, url, cached);
+    await sendCues(tabId, url, cached, frameId);
     return setJob(tabId, { status: "done", message: t("jobLoaded"), lines: cached.length, url });
   }
   await setJob(tabId, { status: "running", stage: "download", detail: "", url, startedAt: Date.now() });
   const tab = await chrome.tabs.get(tabId).catch(() => null);
   await setReferer((videos[0] && videos[0].page) || (tab && tab.url), server.baseUrl);
   await ensureOffscreen();
-  chrome.runtime.sendMessage({ target: "offscreen", type: "transcribe", tabId, url, ...server });
+  chrome.runtime.sendMessage({ target: "offscreen", type: "transcribe", tabId, frameId, url, ...server });
 }
 
 chrome.runtime.onMessage.addListener((msg, sender, reply) => {
@@ -318,7 +322,7 @@ chrome.runtime.onMessage.addListener((msg, sender, reply) => {
         duration: cues.length ? cues[cues.length - 1].end : 0,
       };
       await chrome.storage.local.set({ ["cues:" + msg.url]: cues, ["meta:" + msg.url]: meta });
-      await sendCues(msg.tabId, msg.url, cues);
+      await sendCues(msg.tabId, msg.url, cues, msg.frameId);
       await setJob(msg.tabId, {
         status: "done",
         message: t("jobMade", cues.length),

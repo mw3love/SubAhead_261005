@@ -61,7 +61,7 @@ function renderKey(error) {
     else renderKey(r.message);
   };
   $("save").onclick = save;
-  input.onkeydown = (e) => e.key === "Enter" && save();
+  input.onkeydown = (e) => { if (e.key === "Enter") save(); };
 }
 
 function renderReady() {

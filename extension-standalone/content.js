@@ -42,8 +42,10 @@ function applyStyle() {
 }
 
 function attachCues(cues, url, offset) {
-  const video = mainVideo();
-  if (!video) return;
+  // 자막은 모든 프레임이 함께 받는다. 그 주소를 트는 영상에 붙이고, 없으면 가장 큰 영상에 붙인다.
+  // 그 영상이 다른 주소(http)를 틀고 있으면 다른 영상의 자막이라 붙이지 않는다(blob 등은 주소를 알 수 없어 붙인다).
+  const video = [...document.querySelectorAll("video")].find((v) => v.currentSrc === url) || mainVideo();
+  if (!video || (/^https?:/.test(video.currentSrc) && video.currentSrc !== url)) return;
   for (const old of video.textTracks) if (old.label === TRACK_LABEL) old.mode = "disabled";
   track = video.addTextTrack("subtitles", TRACK_LABEL, "ko");
   trackVideo = video;
