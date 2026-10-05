@@ -1,9 +1,11 @@
 // 팝업 화면: 키 입력 / 준비 / 진행 중 / 완료 / 오류 다섯 상태를 그린다.
+// 화면 글자는 _locales 의 문구를 쓴다(브라우저 언어에 따라 한국어/영어).
+const t = (key, ...subs) => chrome.i18n.getMessage(key, subs.map(String));
 const STEPS = [
-  ["download", "영상 받기"],
-  ["extract", "소리만 뽑기"],
-  ["upload", "올리기"],
-  ["transcribe", "받아 적기"],
+  ["download", t("stepDownload")],
+  ["extract", t("stepExtract")],
+  ["upload", t("stepUpload")],
+  ["transcribe", t("stepTranscribe")],
 ];
 const main = document.getElementById("main");
 let tabId, info;
@@ -12,24 +14,24 @@ const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<
 const fmtDur = (s) => {
   s = Math.round(s);
   const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), r = s % 60;
-  return h ? h + "시간 " + m + "분" : m ? m + "분 " + r + "초" : r + "초";
+  return h ? t("durH", h, m) : m ? t("durM", m, r) : t("durS", r);
 };
-const fmtNum = (n) => Math.round(n).toLocaleString("ko-KR");
+const fmtNum = (n) => Math.round(n).toLocaleString(chrome.i18n.getUILanguage());
 
 function renderKey(error) {
   main.innerHTML = `
-    <h2>시작하려면 키가 필요해요</h2>
-    <p>JBNU 게이트웨이 API 키를 넣어 주세요. 키는 이 브라우저에만 저장돼요.</p>
-    <label for="key" hidden>API 키</label>
-    <input id="key" type="password" placeholder="API 키 붙여넣기" autocomplete="off">
-    <button id="save">저장하고 시작하기</button>
+    <h2>${t("popupKeyTitle")}</h2>
+    <p>${t("popupKeyDesc")}</p>
+    <label for="key" hidden>${t("apiKeyLabel")}</label>
+    <input id="key" type="password" placeholder="${t("keyPlaceholder")}" autocomplete="off">
+    <button id="save">${t("saveAndStart")}</button>
     ${error ? `<p class="warn" role="alert">${esc(error)}</p>` : ""}`;
   const input = document.getElementById("key");
   input.focus();
   const save = async () => {
     const btn = document.getElementById("save");
     btn.disabled = true;
-    btn.textContent = "확인 중…";
+    btn.textContent = t("checking");
     const r = await chrome.runtime.sendMessage({ type: "saveKey", apiKey: input.value.trim() });
     if (r.ok) load();
     else renderKey(r.message);
@@ -41,32 +43,32 @@ function renderKey(error) {
 function renderReady() {
   if (!info.url) {
     main.innerHTML = `
-      <h2>영상을 찾지 못했어요</h2>
-      <p>영상이 있는 페이지에서 영상을 잠깐 재생한 뒤 다시 눌러 주세요.</p>
-      <button id="again" class="sub">다시 찾기</button>`;
+      <h2>${t("noVideoTitle")}</h2>
+      <p>${t("noVideoDesc")}</p>
+      <button id="again" class="sub">${t("findAgain")}</button>`;
     document.getElementById("again").onclick = load;
     return;
   }
   if (info.live) {
     main.innerHTML = `
-      <h2>생방송은 아직 지원하지 않아요</h2>
-      <p>끝이 정해지지 않은 영상이라 전체 자막을 미리 만들 수 없어요. 다시보기 영상에서 사용해 주세요.</p>`;
+      <h2>${t("liveTitle")}</h2>
+      <p>${t("liveDesc")}</p>`;
     return;
   }
   if (info.cached) {
     main.innerHTML = `
-      <div class="card"><div class="row"><span>저장된 자막</span><span>있음</span></div>
-      <div class="row"><span>비용</span><span>들지 않아요</span></div></div>
-      <button id="go">자막 불러오기</button>`;
+      <div class="card"><div class="row"><span>${t("savedSubs")}</span><span>${t("available")}</span></div>
+      <div class="row"><span>${t("cost")}</span><span>${t("free")}</span></div></div>
+      <button id="go">${t("loadSubs")}</button>`;
   } else {
     const short = info.estimate != null && info.remaining != null && info.estimate > info.remaining;
     main.innerHTML = `
       <div class="card">
-        <div class="row"><span>영상 길이</span><span>${info.duration ? fmtDur(info.duration) : "알 수 없음"}</span></div>
-        <div class="row"><span>예상 비용</span><span>${info.estimate != null ? "약 " + fmtNum(info.estimate) + " 크레딧" : "알 수 없음"}</span></div>
-        ${short ? `<div class="warn">남은 크레딧이 모자라요.</div>` : ""}
+        <div class="row"><span>${t("videoLength")}</span><span>${info.duration ? fmtDur(info.duration) : t("unknown")}</span></div>
+        <div class="row"><span>${t("estCost")}</span><span>${info.estimate != null ? t("aboutCredits", fmtNum(info.estimate)) : t("unknown")}</span></div>
+        ${short ? `<div class="warn">${t("notEnough")}</div>` : ""}
       </div>
-      <button id="go" ${short ? "disabled" : ""}>전체 자막 만들기</button>`;
+      <button id="go" ${short ? "disabled" : ""}>${t("makeAll")}</button>`;
   }
   document.getElementById("go").onclick = () => chrome.runtime.sendMessage({ type: "start", tabId });
 }
@@ -75,30 +77,30 @@ function renderRunning(job) {
   const now = STEPS.findIndex(([k]) => k === job.stage);
   const secs = job.startedAt ? Math.round((Date.now() - job.startedAt) / 1000) : 0;
   main.innerHTML = `
-    <h2>자막을 만들고 있어요</h2>
+    <h2>${t("makingTitle")}</h2>
     <ul class="steps">${STEPS.map(([k, label], i) => {
       const cls = i < now ? "done" : i === now ? "now" : "";
       const mark = i < now ? "✓" : "";
       const detail = i === now && job.detail ? `<small>${esc(job.detail)}</small>` : "";
       return `<li class="${cls}"><i>${mark}</i>${label}${detail}</li>`;
     }).join("")}</ul>
-    <p>${secs}초 지났어요. 팝업을 닫아도 계속 진행돼요.</p>`;
+    <p>${t("elapsed", secs)}</p>`;
 }
 
 function renderDone(job) {
   main.innerHTML = `
     <div class="big" aria-hidden="true">✓</div>
     <h2>${esc(job.message)}</h2>
-    <p>${job.credits ? fmtNum(job.credits) + " 크레딧을 썼어요. " : ""}영상을 아무 데나 넘겨 보세요.</p>`;
+    <p>${job.credits ? t("creditsUsed", fmtNum(job.credits)) + " " : ""}${t("seekAnywhere")}</p>`;
 }
 
 function renderError(job) {
   const buttons =
-    job.action === "retry" ? `<button id="retry">다시 시도</button>` :
-    job.action === "key" ? `<button id="rekey">키 다시 넣기</button>` : "";
+    job.action === "retry" ? `<button id="retry">${t("retry")}</button>` :
+    job.action === "key" ? `<button id="rekey">${t("rekey")}</button>` : "";
   main.innerHTML = `
     <div class="card error" role="alert">${esc(job.message)}
-      ${job.detail ? `<details><summary>자세히</summary>${esc(job.detail)}</details>` : ""}</div>
+      ${job.detail ? `<details><summary>${t("details")}</summary>${esc(job.detail)}</details>` : ""}</div>
     ${buttons}`;
   const retry = document.getElementById("retry");
   if (retry) retry.onclick = () => chrome.runtime.sendMessage({ type: "start", tabId });
@@ -110,7 +112,7 @@ function render() {
   const credits = document.getElementById("credits");
   if (info.remaining != null) {
     credits.hidden = false;
-    credits.textContent = "남은 " + fmtNum(info.remaining);
+    credits.textContent = t("remaining", fmtNum(info.remaining));
   }
   const job = info.job;
   // 다른 영상으로 옮겨 간 뒤의 지난 결과는 보여 주지 않는다(진행 중은 항상 보여 줌).
@@ -128,6 +130,9 @@ async function load() {
 }
 
 (async () => {
+  document.documentElement.lang = chrome.i18n.getUILanguage();
+  document.getElementById("title").textContent = t("extName");
+  document.getElementById("opt").textContent = t("settings");
   // ?tab= 은 화면 시험용(팝업을 일반 탭으로 열 때). 평소에는 지금 보고 있는 탭.
   const param = new URLSearchParams(location.search).get("tab");
   tabId = param ? +param : (await chrome.tabs.query({ active: true, currentWindow: true }))[0].id;

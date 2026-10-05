@@ -15,10 +15,10 @@ async function fetchGateway(path, opts) {
   }
   if (r.ok) return r.json();
   const body = (await r.text()).slice(0, 300);
-  if (r.status === 401 || r.status === 403) throw new AppError("BAD_KEY", "게이트웨이 " + r.status + ": " + body);
+  if (r.status === 401 || r.status === 403) throw new AppError("BAD_KEY", "gateway " + r.status + ": " + body);
   if (r.status === 402 || /credit|quota|insufficient|balance/i.test(body))
-    throw new AppError("NO_CREDIT", "게이트웨이 " + r.status + ": " + body);
-  throw new AppError("STT_FAILED", "게이트웨이 " + r.status + ": " + body);
+    throw new AppError("NO_CREDIT", "gateway " + r.status + ": " + body);
+  throw new AppError("STT_FAILED", "gateway " + r.status + ": " + body);
 }
 
 async function transcribe(audio, apiKey, report) {
@@ -29,11 +29,10 @@ async function transcribe(audio, apiKey, report) {
   form.append("language", "ko");
   form.append("file", new Blob([audio], { type: "audio/mp4" }), "audio.m4a");
   const r = await fetchGateway("/audio/transcriptions/", { method: "POST", headers: auth, body: form });
-  if (!r.operation_id) throw new AppError("STT_FAILED", "operation_id 없음: " + JSON.stringify(r).slice(0, 200));
-  const t0 = Date.now();
+  if (!r.operation_id) throw new AppError("STT_FAILED", "no operation_id: " + JSON.stringify(r).slice(0, 200));
   while (true) {
     await new Promise((res) => setTimeout(res, 3000));
-    report("transcribe", Math.round((Date.now() - t0) / 1000) + "초 경과");
+    report("transcribe", "");
     const st = await fetchGateway("/audio/transcriptions/" + r.operation_id + "/", { headers: auth });
     if (st.status === "completed") return { segments: st.segments || [], credits: r.credits_charged };
     if (st.status === "failed" || st.status === "error")

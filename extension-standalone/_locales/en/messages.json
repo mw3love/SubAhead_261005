@@ -1,0 +1,487 @@
+{
+  "extName": {
+    "message": "Miri Subtitles"
+  },
+  "extDesc": {
+    "message": "Transcribes a video's audio ahead of time so Korean subtitles stay in sync wherever you seek. Requires your own JBNU gateway key."
+  },
+  "trackLabel": {
+    "message": "Miri Subtitles"
+  },
+  "cmdToggle": {
+    "message": "Toggle subtitles"
+  },
+  "cmdSize": {
+    "message": "Change subtitle size"
+  },
+  "cmdEarlier": {
+    "message": "Subtitles 0.5s earlier"
+  },
+  "cmdLater": {
+    "message": "Subtitles 0.5s later"
+  },
+  "stageDownload": {
+    "message": "Downloading video"
+  },
+  "stageExtract": {
+    "message": "Extracting audio"
+  },
+  "stageUpload": {
+    "message": "Uploading"
+  },
+  "stageTranscribe": {
+    "message": "Transcribing"
+  },
+  "stagePreparing": {
+    "message": "Preparing"
+  },
+  "stepDownload": {
+    "message": "Download video"
+  },
+  "stepExtract": {
+    "message": "Extract audio"
+  },
+  "stepUpload": {
+    "message": "Upload"
+  },
+  "stepTranscribe": {
+    "message": "Transcribe"
+  },
+  "errNO_KEY": {
+    "message": "Please enter your gateway key first."
+  },
+  "errNO_VIDEO": {
+    "message": "No video found on this page. Play the video briefly, then try again."
+  },
+  "errBAD_KEY": {
+    "message": "The key was rejected. Please check your key."
+  },
+  "errNO_CREDIT": {
+    "message": "Not enough credits. Please try again after your credits renew."
+  },
+  "errMEDIA_BLOCKED": {
+    "message": "This site blocked the video download, so subtitles can't be made here."
+  },
+  "errENCRYPTED": {
+    "message": "This video is protected (encrypted), so subtitles can't be made."
+  },
+  "errLIVE": {
+    "message": "Live streams aren't supported yet. Please use it on a recorded video."
+  },
+  "errNETWORK": {
+    "message": "The connection dropped or the server couldn't be reached."
+  },
+  "errFFMPEG": {
+    "message": "Couldn't extract the audio. The video format may not be supported."
+  },
+  "errSTT_FAILED": {
+    "message": "The transcription server returned an error. Please try again later."
+  },
+  "errUNKNOWN": {
+    "message": "An unknown error occurred."
+  },
+  "jobMade": {
+    "message": "Created $P1$ subtitle lines.",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "jobLoaded": {
+    "message": "Loaded saved subtitles."
+  },
+  "jobAttached": {
+    "message": "Applied saved subtitles."
+  },
+  "keyWrong": {
+    "message": "The key is incorrect."
+  },
+  "keyCheckFailed": {
+    "message": "Couldn't verify the key (server response $P1$).",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "keyNoModel": {
+    "message": "This key can't use the speech recognition model."
+  },
+  "keyOffline": {
+    "message": "Please check your internet connection."
+  },
+  "toastTitle": {
+    "message": "Miri Subtitles · $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "toastDone": {
+    "message": "Done"
+  },
+  "toastFailed": {
+    "message": "Failed"
+  },
+  "subsOn": {
+    "message": "Subtitles on"
+  },
+  "subsOff": {
+    "message": "Subtitles off"
+  },
+  "syncEarlier": {
+    "message": "Subtitles $P1$s earlier",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "syncLater": {
+    "message": "Subtitles $P1$s later",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "syncTotal": {
+    "message": "Total $P1$s",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "syncReset": {
+    "message": "Back to original"
+  },
+  "sizeNotice": {
+    "message": "Subtitle size: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "sizeS": {
+    "message": "Small"
+  },
+  "sizeM": {
+    "message": "Medium"
+  },
+  "sizeL": {
+    "message": "Large"
+  },
+  "sizeXL": {
+    "message": "Extra large"
+  },
+  "colorWhite": {
+    "message": "White"
+  },
+  "colorYellow": {
+    "message": "Yellow"
+  },
+  "colorMint": {
+    "message": "Mint"
+  },
+  "colorSky": {
+    "message": "Sky blue"
+  },
+  "bgNone": {
+    "message": "None"
+  },
+  "bgLight": {
+    "message": "Light"
+  },
+  "bgDark": {
+    "message": "Dark"
+  },
+  "bgBlack": {
+    "message": "Black"
+  },
+  "edgeNone": {
+    "message": "None"
+  },
+  "edgeShadow": {
+    "message": "Shadow"
+  },
+  "edgeOutline": {
+    "message": "Outline"
+  },
+  "posBottom": {
+    "message": "Bottom"
+  },
+  "posRaised": {
+    "message": "Raised"
+  },
+  "posTop": {
+    "message": "Top"
+  },
+  "popupKeyTitle": {
+    "message": "A key is needed to start"
+  },
+  "popupKeyDesc": {
+    "message": "Enter your JBNU gateway API key. It's stored only in this browser."
+  },
+  "apiKeyLabel": {
+    "message": "API key"
+  },
+  "keyPlaceholder": {
+    "message": "Paste your API key"
+  },
+  "saveAndStart": {
+    "message": "Save and start"
+  },
+  "checking": {
+    "message": "Checking…"
+  },
+  "noVideoTitle": {
+    "message": "No video found"
+  },
+  "noVideoDesc": {
+    "message": "On a page with a video, play it briefly and try again."
+  },
+  "findAgain": {
+    "message": "Search again"
+  },
+  "liveTitle": {
+    "message": "Live streams aren't supported yet"
+  },
+  "liveDesc": {
+    "message": "A live video has no fixed end, so full subtitles can't be made in advance. Please use it on a recorded video."
+  },
+  "savedSubs": {
+    "message": "Saved subtitles"
+  },
+  "available": {
+    "message": "Available"
+  },
+  "cost": {
+    "message": "Cost"
+  },
+  "free": {
+    "message": "Free"
+  },
+  "loadSubs": {
+    "message": "Load subtitles"
+  },
+  "videoLength": {
+    "message": "Video length"
+  },
+  "estCost": {
+    "message": "Estimated cost"
+  },
+  "unknown": {
+    "message": "Unknown"
+  },
+  "aboutCredits": {
+    "message": "About $P1$ credits",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "notEnough": {
+    "message": "Not enough credits left."
+  },
+  "makeAll": {
+    "message": "Create full subtitles"
+  },
+  "makingTitle": {
+    "message": "Creating subtitles"
+  },
+  "elapsed": {
+    "message": "$P1$s elapsed. It keeps going even if you close this popup.",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "creditsUsed": {
+    "message": "Used $P1$ credits.",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "seekAnywhere": {
+    "message": "Try seeking anywhere in the video."
+  },
+  "retry": {
+    "message": "Try again"
+  },
+  "rekey": {
+    "message": "Enter key again"
+  },
+  "details": {
+    "message": "Details"
+  },
+  "settings": {
+    "message": "Settings"
+  },
+  "remaining": {
+    "message": "$P1$ left",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "durH": {
+    "message": "$P1$h $P2$m",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      }
+    }
+  },
+  "durM": {
+    "message": "$P1$m $P2$s",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      }
+    }
+  },
+  "durS": {
+    "message": "$P1$s",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "optTitle": {
+    "message": "Miri Subtitles settings"
+  },
+  "styleTitle": {
+    "message": "Subtitle style"
+  },
+  "styleDesc": {
+    "message": "Changes apply right away to videos that are open."
+  },
+  "previewText": {
+    "message": "This is how subtitles look. They stay in sync wherever you seek."
+  },
+  "fSize": {
+    "message": "Text size"
+  },
+  "fColor": {
+    "message": "Text color"
+  },
+  "fBg": {
+    "message": "Background"
+  },
+  "fEdge": {
+    "message": "Text edge"
+  },
+  "fPos": {
+    "message": "Position"
+  },
+  "resetDefault": {
+    "message": "Reset to default"
+  },
+  "keysTitle": {
+    "message": "Keyboard shortcuts"
+  },
+  "keysDesc": {
+    "message": "Press them while watching. You can change the keys in Chrome's shortcut settings."
+  },
+  "notSet": {
+    "message": "Not set"
+  },
+  "changeShortcuts": {
+    "message": "Change shortcuts"
+  },
+  "savedDesc": {
+    "message": "Subtitles you create are saved here, so reopening the same video applies them instantly at no cost."
+  },
+  "savedSummary": {
+    "message": "$P1$ saved · $P2$ used ($P3$% of the 10 MB limit)",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      },
+      "p3": {
+        "content": "$3"
+      }
+    }
+  },
+  "savedEmpty": {
+    "message": "No saved subtitles yet."
+  },
+  "lines": {
+    "message": "$P1$ lines",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "syncShort": {
+    "message": "Sync $P1$s",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "delete": {
+    "message": "Delete"
+  },
+  "deleteAria": {
+    "message": "Delete subtitles for $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "clearAll": {
+    "message": "Delete all"
+  },
+  "clearConfirm": {
+    "message": "Delete everything? Click again to confirm"
+  },
+  "apiTitle": {
+    "message": "Gateway key"
+  },
+  "apiDesc": {
+    "message": "Your JBNU gateway API key. It's stored only in this browser."
+  },
+  "keySaved": {
+    "message": "Saved key: ••••$P1$ · stored only in this browser.",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "keyNone": {
+    "message": "No key yet. Please enter your JBNU gateway API key."
+  },
+  "newKeyPlaceholder": {
+    "message": "Paste a new key"
+  },
+  "save": {
+    "message": "Save"
+  },
+  "keySavedOk": {
+    "message": "✓ Saved."
+  }
+}

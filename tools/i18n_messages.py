@@ -1,0 +1,141 @@
+# 문구 원본: 키 → (한국어, 영어). $1, $2 … 는 자리표시자.
+# 이 파일을 고친 뒤 `python3 tools/i18n_messages.py` 를 실행하면 extension-standalone/_locales/{ko,en}/messages.json 이 다시 만들어진다.
+M = {
+ "extName": ("미리 자막", "Miri Subtitles"),
+ "extDesc": ("영상 소리를 미리 받아 적어, 어디로 넘겨도 맞는 한국어 자막을 띄웁니다. 본인 JBNU 게이트웨이 키가 필요합니다.",
+             "Transcribes a video's audio ahead of time so Korean subtitles stay in sync wherever you seek. Requires your own JBNU gateway key."),
+ "trackLabel": ("미리 자막", "Miri Subtitles"),
+ "cmdToggle": ("자막 켜기·끄기", "Toggle subtitles"),
+ "cmdSize": ("자막 크기 바꾸기", "Change subtitle size"),
+ "cmdEarlier": ("자막 0.5초 빠르게", "Subtitles 0.5s earlier"),
+ "cmdLater": ("자막 0.5초 늦게", "Subtitles 0.5s later"),
+
+ "stageDownload": ("영상 받는 중", "Downloading video"),
+ "stageExtract": ("소리만 뽑는 중", "Extracting audio"),
+ "stageUpload": ("올리는 중", "Uploading"),
+ "stageTranscribe": ("받아 적는 중", "Transcribing"),
+ "stagePreparing": ("준비 중", "Preparing"),
+ "stepDownload": ("영상 받기", "Download video"),
+ "stepExtract": ("소리만 뽑기", "Extract audio"),
+ "stepUpload": ("올리기", "Upload"),
+ "stepTranscribe": ("받아 적기", "Transcribe"),
+
+ "errNO_KEY": ("먼저 게이트웨이 키를 넣어 주세요.", "Please enter your gateway key first."),
+ "errNO_VIDEO": ("이 페이지에서 영상을 찾지 못했어요. 영상을 잠깐 재생한 뒤 다시 눌러 주세요.", "No video found on this page. Play the video briefly, then try again."),
+ "errBAD_KEY": ("키가 맞지 않아요. 키를 다시 확인해 주세요.", "The key was rejected. Please check your key."),
+ "errNO_CREDIT": ("크레딧이 모자라요. 다음 달 충전 후 다시 시도해 주세요.", "Not enough credits. Please try again after your credits renew."),
+ "errMEDIA_BLOCKED": ("이 사이트가 영상 받기를 막았어요. 이 사이트에서는 자막을 만들 수 없어요.", "This site blocked the video download, so subtitles can't be made here."),
+ "errENCRYPTED": ("보호(암호화)된 영상이라 자막을 만들 수 없어요.", "This video is protected (encrypted), so subtitles can't be made."),
+ "errLIVE": ("생방송은 아직 지원하지 않아요. 다시보기 영상에서 사용해 주세요.", "Live streams aren't supported yet. Please use it on a recorded video."),
+ "errNETWORK": ("인터넷 연결이 끊겼거나 서버에 닿지 못했어요.", "The connection dropped or the server couldn't be reached."),
+ "errFFMPEG": ("영상에서 소리를 뽑지 못했어요. 지원하지 않는 영상 형식일 수 있어요.", "Couldn't extract the audio. The video format may not be supported."),
+ "errSTT_FAILED": ("받아 적기 서버에서 오류가 났어요. 잠시 뒤 다시 시도해 주세요.", "The transcription server returned an error. Please try again later."),
+ "errUNKNOWN": ("알 수 없는 오류가 났어요.", "An unknown error occurred."),
+
+ "jobMade": ("자막 $1줄을 만들었어요.", "Created $1 subtitle lines."),
+ "jobLoaded": ("저장된 자막을 불러왔어요.", "Loaded saved subtitles."),
+ "jobAttached": ("저장된 자막을 붙였어요.", "Applied saved subtitles."),
+
+ "keyWrong": ("키가 맞지 않아요.", "The key is incorrect."),
+ "keyCheckFailed": ("확인하지 못했어요 (서버 응답 $1).", "Couldn't verify the key (server response $1)."),
+ "keyNoModel": ("이 키로는 음성인식 모델을 쓸 수 없어요.", "This key can't use the speech recognition model."),
+ "keyOffline": ("인터넷 연결을 확인해 주세요.", "Please check your internet connection."),
+
+ "toastTitle": ("미리 자막 · $1", "Miri Subtitles · $1"),
+ "toastDone": ("완성", "Done"),
+ "toastFailed": ("실패", "Failed"),
+ "subsOn": ("자막 켬", "Subtitles on"),
+ "subsOff": ("자막 끔", "Subtitles off"),
+ "syncEarlier": ("자막 $1초 빠르게", "Subtitles $1s earlier"),
+ "syncLater": ("자막 $1초 늦게", "Subtitles $1s later"),
+ "syncTotal": ("합계 $1초", "Total $1s"),
+ "syncReset": ("원래대로", "Back to original"),
+ "sizeNotice": ("자막 크기: $1", "Subtitle size: $1"),
+
+ "sizeS": ("작게", "Small"), "sizeM": ("보통", "Medium"), "sizeL": ("크게", "Large"), "sizeXL": ("아주 크게", "Extra large"),
+ "colorWhite": ("흰색", "White"), "colorYellow": ("노랑", "Yellow"), "colorMint": ("민트", "Mint"), "colorSky": ("하늘", "Sky blue"),
+ "bgNone": ("없음", "None"), "bgLight": ("옅게", "Light"), "bgDark": ("진하게", "Dark"), "bgBlack": ("검정", "Black"),
+ "edgeNone": ("없음", "None"), "edgeShadow": ("그림자", "Shadow"), "edgeOutline": ("테두리", "Outline"),
+ "posBottom": ("아래", "Bottom"), "posRaised": ("조금 위", "Raised"), "posTop": ("위", "Top"),
+
+ "popupKeyTitle": ("시작하려면 키가 필요해요", "A key is needed to start"),
+ "popupKeyDesc": ("JBNU 게이트웨이 API 키를 넣어 주세요. 키는 이 브라우저에만 저장돼요.", "Enter your JBNU gateway API key. It's stored only in this browser."),
+ "apiKeyLabel": ("API 키", "API key"),
+ "keyPlaceholder": ("API 키 붙여넣기", "Paste your API key"),
+ "saveAndStart": ("저장하고 시작하기", "Save and start"),
+ "checking": ("확인 중…", "Checking…"),
+ "noVideoTitle": ("영상을 찾지 못했어요", "No video found"),
+ "noVideoDesc": ("영상이 있는 페이지에서 영상을 잠깐 재생한 뒤 다시 눌러 주세요.", "On a page with a video, play it briefly and try again."),
+ "findAgain": ("다시 찾기", "Search again"),
+ "liveTitle": ("생방송은 아직 지원하지 않아요", "Live streams aren't supported yet"),
+ "liveDesc": ("끝이 정해지지 않은 영상이라 전체 자막을 미리 만들 수 없어요. 다시보기 영상에서 사용해 주세요.", "A live video has no fixed end, so full subtitles can't be made in advance. Please use it on a recorded video."),
+ "savedSubs": ("저장된 자막", "Saved subtitles"),
+ "available": ("있음", "Available"),
+ "cost": ("비용", "Cost"),
+ "free": ("들지 않아요", "Free"),
+ "loadSubs": ("자막 불러오기", "Load subtitles"),
+ "videoLength": ("영상 길이", "Video length"),
+ "estCost": ("예상 비용", "Estimated cost"),
+ "unknown": ("알 수 없음", "Unknown"),
+ "aboutCredits": ("약 $1 크레딧", "About $1 credits"),
+ "notEnough": ("남은 크레딧이 모자라요.", "Not enough credits left."),
+ "makeAll": ("전체 자막 만들기", "Create full subtitles"),
+ "makingTitle": ("자막을 만들고 있어요", "Creating subtitles"),
+ "elapsed": ("$1초 지났어요. 팝업을 닫아도 계속 진행돼요.", "$1s elapsed. It keeps going even if you close this popup."),
+ "creditsUsed": ("$1 크레딧을 썼어요.", "Used $1 credits."),
+ "seekAnywhere": ("영상을 아무 데나 넘겨 보세요.", "Try seeking anywhere in the video."),
+ "retry": ("다시 시도", "Try again"),
+ "rekey": ("키 다시 넣기", "Enter key again"),
+ "details": ("자세히", "Details"),
+ "settings": ("설정", "Settings"),
+ "remaining": ("남은 $1", "$1 left"),
+ "durH": ("$1시간 $2분", "$1h $2m"),
+ "durM": ("$1분 $2초", "$1m $2s"),
+ "durS": ("$1초", "$1s"),
+
+ "optTitle": ("미리 자막 설정", "Miri Subtitles settings"),
+ "styleTitle": ("자막 모양", "Subtitle style"),
+ "styleDesc": ("바꾸면 열려 있는 영상의 자막에도 바로 적용돼요.", "Changes apply right away to videos that are open."),
+ "previewText": ("미리 자막은 이렇게 보여요. 아무 데나 넘겨도 맞아요.", "This is how subtitles look. They stay in sync wherever you seek."),
+ "fSize": ("글자 크기", "Text size"), "fColor": ("글자색", "Text color"), "fBg": ("배경", "Background"),
+ "fEdge": ("글자 테두리", "Text edge"), "fPos": ("위치", "Position"),
+ "resetDefault": ("기본값으로", "Reset to default"),
+ "keysTitle": ("단축키", "Keyboard shortcuts"),
+ "keysDesc": ("영상을 보는 중에 누르면 돼요. 키는 Chrome 단축키 설정에서 바꿀 수 있어요.", "Press them while watching. You can change the keys in Chrome's shortcut settings."),
+ "notSet": ("지정 안 됨", "Not set"),
+ "changeShortcuts": ("단축키 바꾸기", "Change shortcuts"),
+ "savedDesc": ("한 번 만든 자막은 여기 저장돼서, 같은 영상을 다시 열면 크레딧 없이 바로 붙어요.", "Subtitles you create are saved here, so reopening the same video applies them instantly at no cost."),
+ "savedSummary": ("$1개 · $2 사용 중 (한도 10 MB의 $3%)", "$1 saved · $2 used ($3% of the 10 MB limit)"),
+ "savedEmpty": ("아직 저장된 자막이 없어요.", "No saved subtitles yet."),
+ "lines": ("$1줄", "$1 lines"),
+ "syncShort": ("싱크 $1초", "Sync $1s"),
+ "delete": ("지우기", "Delete"),
+ "deleteAria": ("$1 자막 지우기", "Delete subtitles for $1"),
+ "clearAll": ("모두 지우기", "Delete all"),
+ "clearConfirm": ("정말 모두 지울까요? 한 번 더 누르세요", "Delete everything? Click again to confirm"),
+ "apiTitle": ("게이트웨이 키", "Gateway key"),
+ "apiDesc": ("JBNU 게이트웨이 API 키. 이 브라우저에만 저장돼요.", "Your JBNU gateway API key. It's stored only in this browser."),
+ "keySaved": ("저장된 키: ••••$1 · 이 브라우저에만 저장돼요.", "Saved key: ••••$1 · stored only in this browser."),
+ "keyNone": ("아직 키가 없어요. JBNU 게이트웨이 API 키를 넣어 주세요.", "No key yet. Please enter your JBNU gateway API key."),
+ "newKeyPlaceholder": ("새 키 붙여넣기", "Paste a new key"),
+ "save": ("저장", "Save"),
+ "keySavedOk": ("✓ 저장했어요.", "✓ Saved."),
+}
+
+if __name__ == "__main__":
+    import json, os, re
+    here = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "extension-standalone", "_locales")
+    for i, lang in enumerate(["ko", "en"]):
+        out = {}
+        for key, texts in M.items():
+            text = texts[i]
+            nums = sorted(set(re.findall(r"\$(\d)", text)))
+            entry = {"message": re.sub(r"\$(\d)", r"$P\1$", text)}
+            if nums:
+                entry["placeholders"] = {"p" + n: {"content": "$" + n} for n in nums}
+            out[key] = entry
+        os.makedirs(os.path.join(here, lang), exist_ok=True)
+        with open(os.path.join(here, lang, "messages.json"), "w", encoding="utf-8") as f:
+            json.dump(out, f, ensure_ascii=False, indent=2)
+            f.write("\n")
+    print("messages:", len(M))

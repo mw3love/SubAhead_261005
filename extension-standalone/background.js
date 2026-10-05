@@ -6,19 +6,13 @@ const MAX_CUE_CHARS = 40;
 const CREDITS_PER_SEC = 0.1; // Soniox stt-async-v5 실측
 
 
-// 오류 종류별 쉬운 안내와, 팝업에 띄울 버튼(retry: 다시 시도 / key: 키 다시 넣기)
-const ERRORS = {
-  NO_KEY: { message: "먼저 게이트웨이 키를 넣어 주세요.", action: "key" },
-  NO_VIDEO: { message: "이 페이지에서 영상을 찾지 못했어요. 영상을 잠깐 재생한 뒤 다시 눌러 주세요.", action: "retry" },
-  BAD_KEY: { message: "키가 맞지 않아요. 키를 다시 확인해 주세요.", action: "key" },
-  NO_CREDIT: { message: "크레딧이 모자라요. 다음 달 충전 후 다시 시도해 주세요.", action: null },
-  MEDIA_BLOCKED: { message: "이 사이트가 영상 받기를 막았어요. 이 사이트에서는 자막을 만들 수 없어요.", action: "retry" },
-  ENCRYPTED: { message: "보호(암호화)된 영상이라 자막을 만들 수 없어요.", action: null },
-  LIVE: { message: "생방송은 아직 지원하지 않아요. 다시보기 영상에서 사용해 주세요.", action: null },
-  NETWORK: { message: "인터넷 연결이 끊겼거나 서버에 닿지 못했어요.", action: "retry" },
-  FFMPEG: { message: "영상에서 소리를 뽑지 못했어요. 지원하지 않는 영상 형식일 수 있어요.", action: "retry" },
-  STT_FAILED: { message: "받아 적기 서버에서 오류가 났어요. 잠시 뒤 다시 시도해 주세요.", action: "retry" },
-  UNKNOWN: { message: "알 수 없는 오류가 났어요.", action: "retry" },
+// 화면에 보일 문구는 _locales 에 있다(브라우저 언어에 따라 한국어/영어).
+const t = (key, ...subs) => chrome.i18n.getMessage(key, subs.map(String));
+
+// 오류 종류별 팝업 버튼(retry: 다시 시도 / key: 키 다시 넣기). 안내 문구는 _locales 의 err<종류>.
+const ERROR_ACTION = {
+  NO_KEY: "key", NO_VIDEO: "retry", BAD_KEY: "key", NO_CREDIT: null, MEDIA_BLOCKED: "retry",
+  ENCRYPTED: null, LIVE: null, NETWORK: "retry", FFMPEG: "retry", STT_FAILED: "retry", UNKNOWN: "retry",
 };
 
 chrome.webRequest.onBeforeRequest.addListener(
@@ -119,8 +113,8 @@ async function setJob(tabId, job) {
 }
 
 function fail(tabId, url, code, detail) {
-  const e = ERRORS[code] || ERRORS.UNKNOWN;
-  return setJob(tabId, { status: "error", code, message: e.message, action: e.action, detail: detail || "", url });
+  if (!(code in ERROR_ACTION)) code = "UNKNOWN";
+  return setJob(tabId, { status: "error", code, message: t("err" + code), action: ERROR_ACTION[code], detail: detail || "", url });
 }
 
 async function ensureOffscreen() {
@@ -173,12 +167,12 @@ async function saveKey(apiKey) {
   // 크레딧이 들지 않는 모델 목록 요청으로 키를 확인한 뒤 저장한다.
   try {
     const r = await fetch(GATEWAY + "/models/", { headers: { Authorization: "Bearer " + apiKey } });
-    if (r.status === 401 || r.status === 403) return { ok: false, message: "키가 맞지 않아요." };
-    if (!r.ok) return { ok: false, message: "확인하지 못했어요 (서버 응답 " + r.status + ")." };
+    if (r.status === 401 || r.status === 403) return { ok: false, message: t("keyWrong") };
+    if (!r.ok) return { ok: false, message: t("keyCheckFailed", r.status) };
     const ids = ((await r.json()).data || []).map((m) => m.id);
-    if (!ids.includes("stt-async-v5")) return { ok: false, message: "이 키로는 음성인식 모델을 쓸 수 없어요." };
+    if (!ids.includes("stt-async-v5")) return { ok: false, message: t("keyNoModel") };
   } catch {
-    return { ok: false, message: "인터넷 연결을 확인해 주세요." };
+    return { ok: false, message: t("keyOffline") };
   }
   await chrome.storage.local.set({ apiKey });
   return { ok: true };
@@ -198,7 +192,7 @@ async function autoAttach(tabId, frameId, video) {
   const cached = (await chrome.storage.local.get("cues:" + url))["cues:" + url];
   if (!cached) return;
   await sendCues(tabId, url, cached, frameId);
-  await setJob(tabId, { status: "done", message: "저장된 자막을 붙였어요.", lines: cached.length, url });
+  await setJob(tabId, { status: "done", message: t("jobAttached"), lines: cached.length, url });
 }
 
 // 영상 서버가 "어느 페이지에서 왔는지"를 확인하는 경우를 위해, 확장이 영상을 받을 때
@@ -241,7 +235,7 @@ async function start(tabId) {
   const cached = (await chrome.storage.local.get(cacheKey))[cacheKey];
   if (cached) {
     await sendCues(tabId, url, cached);
-    return setJob(tabId, { status: "done", message: "저장된 자막을 불러왔어요.", lines: cached.length, url });
+    return setJob(tabId, { status: "done", message: t("jobLoaded"), lines: cached.length, url });
   }
   await setJob(tabId, { status: "running", stage: "download", detail: "", url, startedAt: Date.now() });
   const tab = await chrome.tabs.get(tabId).catch(() => null);
@@ -288,7 +282,7 @@ chrome.runtime.onMessage.addListener((msg, sender, reply) => {
       await sendCues(msg.tabId, msg.url, cues);
       await setJob(msg.tabId, {
         status: "done",
-        message: "자막 " + cues.length + "줄을 만들었어요.",
+        message: t("jobMade", cues.length),
         lines: cues.length,
         credits: msg.credits,
         url: msg.url,
@@ -306,7 +300,7 @@ async function onCommand(name, tab) {
     const style = MiriStyle.normalize((await chrome.storage.local.get("style")).style);
     const [key, label] = MiriStyle.nextSize(style.size);
     await chrome.storage.local.set({ style: { ...style, size: key } });
-    chrome.tabs.sendMessage(tab.id, { type: "notice", title: "자막 크기: " + label }).catch(() => {});
+    chrome.tabs.sendMessage(tab.id, { type: "notice", title: t("sizeNotice", label) }).catch(() => {});
   } else {
     chrome.tabs.sendMessage(tab.id, { type: "command", name }).catch(() => {});
   }

@@ -1,8 +1,9 @@
 {
   "manifest_version": 3,
-  "name": "미리 자막",
-  "version": "1.1.2",
-  "description": "영상 소리를 미리 받아 적어, 어디로 넘겨도 맞는 한국어 자막을 띄웁니다. 본인 JBNU 게이트웨이 키가 필요합니다.",
+  "name": "__MSG_extName__",
+  "version": "1.2.0",
+  "default_locale": "en",
+  "description": "__MSG_extDesc__",
   "icons": {
     "16": "icons/icon16.png",
     "32": "icons/icon32.png",
@@ -52,25 +53,25 @@
       "suggested_key": {
         "default": "Alt+Shift+S"
       },
-      "description": "자막 켜기·끄기"
+      "description": "__MSG_cmdToggle__"
     },
     "size": {
       "suggested_key": {
         "default": "Alt+Shift+Up"
       },
-      "description": "자막 크기 바꾸기"
+      "description": "__MSG_cmdSize__"
     },
     "earlier": {
       "suggested_key": {
         "default": "Alt+Shift+Left"
       },
-      "description": "자막 0.5초 빠르게"
+      "description": "__MSG_cmdEarlier__"
     },
     "later": {
       "suggested_key": {
         "default": "Alt+Shift+Right"
       },
-      "description": "자막 0.5초 늦게"
+      "description": "__MSG_cmdLater__"
     }
   }
 }

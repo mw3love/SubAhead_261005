@@ -1,11 +1,13 @@
 // 자막 모양 설정 → video::cue CSS 와 자막 위치(VTTCue.line)로 바꾸는 공용 코드. content.js 와 설정 페이지가 함께 쓴다.
 globalThis.MiriStyle = (() => {
   const DEFAULT = { size: "m", color: "#ffffff", bg: 0.75, edge: "none", position: "bottom" };
-  const SIZES = [["s", "작게", 1.0], ["m", "보통", 1.4], ["l", "크게", 1.8], ["xl", "아주 크게", 2.3]];
-  const COLORS = [["#ffffff", "흰색"], ["#facc15", "노랑"], ["#a7f3d0", "민트"], ["#93c5fd", "하늘"]];
-  const BGS = [[0, "없음"], [0.5, "옅게"], [0.75, "진하게"], [1, "검정"]];
-  const EDGES = [["none", "없음"], ["shadow", "그림자"], ["outline", "테두리"]];
-  const POSITIONS = [["bottom", "아래"], ["raised", "조금 위"], ["top", "위"]];
+  // 이름표는 _locales 문구(브라우저 언어에 따라 한국어/영어)
+  const t = (key) => chrome.i18n.getMessage(key);
+  const SIZES = [["s", t("sizeS"), 1.0], ["m", t("sizeM"), 1.4], ["l", t("sizeL"), 1.8], ["xl", t("sizeXL"), 2.3]];
+  const COLORS = [["#ffffff", t("colorWhite")], ["#facc15", t("colorYellow")], ["#a7f3d0", t("colorMint")], ["#93c5fd", t("colorSky")]];
+  const BGS = [[0, t("bgNone")], [0.5, t("bgLight")], [0.75, t("bgDark")], [1, t("bgBlack")]];
+  const EDGES = [["none", t("edgeNone")], ["shadow", t("edgeShadow")], ["outline", t("edgeOutline")]];
+  const POSITIONS = [["bottom", t("posBottom")], ["raised", t("posRaised")], ["top", t("posTop")]];
   const SHADOW = {
     none: "none",
     shadow: "0.06em 0.06em 0.15em rgba(0,0,0,.95)",

@@ -2,12 +2,14 @@
 // 기본 트랙이라 앞뒤로 넘기거나 전체화면이어도 브라우저가 알아서 그 시간의 자막을 보여 준다.
 // 자막 모양은 설정(storage.local.style)을 따르고, 설정이 바뀌면 바로 다시 적용한다.
 // 작업 진행 상황(status)·단축키 결과는 영상이 있는 프레임에만 작은 알림으로 띄운다.
+const t = (key, ...subs) => chrome.i18n.getMessage(key, subs.map(String));
 const STAGE_LABEL = {
-  download: "영상 받는 중",
-  extract: "소리만 뽑는 중",
-  upload: "올리는 중",
-  transcribe: "받아 적는 중",
+  download: t("stageDownload"),
+  extract: t("stageExtract"),
+  upload: t("stageUpload"),
+  transcribe: t("stageTranscribe"),
 };
+const TRACK_LABEL = t("trackLabel");
 const SYNC_STEP = 0.5;
 
 let track = null, style = MiriStyle.DEFAULT, syncOffset = 0, currentUrl = null, askedSrc = null;
@@ -38,8 +40,8 @@ function applyStyle() {
 function attachCues(cues, url, offset) {
   const video = mainVideo();
   if (!video) return;
-  for (const t of video.textTracks) if (t.label === "미리 자막") t.mode = "disabled";
-  track = video.addTextTrack("subtitles", "미리 자막", "ko");
+  for (const old of video.textTracks) if (old.label === TRACK_LABEL) old.mode = "disabled";
+  track = video.addTextTrack("subtitles", TRACK_LABEL, "ko");
   currentUrl = url;
   syncOffset = offset || 0;
   askedSrc = video.currentSrc;
@@ -56,7 +58,7 @@ function command(name) {
   if (!track) return;
   if (name === "toggle") {
     track.mode = track.mode === "showing" ? "hidden" : "showing";
-    notice(track.mode === "showing" ? "자막 켬" : "자막 끔");
+    notice(track.mode === "showing" ? t("subsOn") : t("subsOff"));
   }
   if (name === "earlier" || name === "later") {
     const d = name === "earlier" ? -SYNC_STEP : SYNC_STEP;
@@ -65,8 +67,8 @@ function command(name) {
       c.startTime = Math.max(0, c.startTime + d);
       c.endTime = Math.max(c.startTime, c.endTime + d);
     }
-    const total = syncOffset === 0 ? "원래대로" : "합계 " + (syncOffset > 0 ? "+" : "−") + Math.abs(syncOffset).toFixed(1) + "초";
-    notice("자막 " + SYNC_STEP + "초 " + (d < 0 ? "빠르게" : "늦게"), total);
+    const total = syncOffset === 0 ? t("syncReset") : t("syncTotal", (syncOffset > 0 ? "+" : "−") + Math.abs(syncOffset).toFixed(1));
+    notice(t(d < 0 ? "syncEarlier" : "syncLater", SYNC_STEP), total);
     // 영상별로 기억해 두었다가 다음에 열 때 그대로 적용한다
     if (currentUrl) chrome.storage.local.set({ ["sync:" + currentUrl]: syncOffset });
   }
@@ -103,9 +105,9 @@ function showToast(kind, title, text) {
 }
 
 function showStatus(job) {
-  if (job.status === "running") showToast("running", "미리 자막 · " + (STAGE_LABEL[job.stage] || "준비 중"), job.detail);
-  else if (job.status === "done") showToast("done", "미리 자막 · 완성", job.message);
-  else showToast("error", "미리 자막 · 실패", job.message);
+  if (job.status === "running") showToast("running", t("toastTitle", STAGE_LABEL[job.stage] || t("stagePreparing")), job.detail);
+  else if (job.status === "done") showToast("done", t("toastTitle", t("toastDone")), job.message);
+  else showToast("error", t("toastTitle", t("toastFailed")), job.message);
 }
 
 function notice(title, text) {

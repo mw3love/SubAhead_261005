@@ -1,23 +1,28 @@
-// 설정 페이지: 자막 모양(미리보기) / 단축키 목록 / 게이트웨이 키.
+// 설정 페이지: 자막 모양(미리보기) / 단축키 목록 / 저장된 자막 / 게이트웨이 키.
+// 화면 글자는 _locales 문구(브라우저 언어에 따라 한국어/영어). HTML 은 data-i18n 으로 채운다.
 const $ = (id) => document.getElementById(id);
+const t = (key, ...subs) => chrome.i18n.getMessage(key, subs.map(String));
+document.documentElement.lang = chrome.i18n.getUILanguage();
+for (const el of document.querySelectorAll("[data-i18n]")) el.textContent = t(el.dataset.i18n);
+for (const el of document.querySelectorAll("[data-i18n-placeholder]")) el.placeholder = t(el.dataset.i18nPlaceholder);
 const S = MiriStyle;
 let style = S.DEFAULT;
 
 // 미리보기: 실제와 같은 방식(브라우저 기본 자막)으로 샘플 자막을 띄운다.
 const pv = $("pv");
-const pvTrack = pv.addTextTrack("subtitles", "미리보기", "ko");
-const pvCue = new VTTCue(0, 3600, "미리 자막은 이렇게 보여요. 아무 데나 넘겨도 맞아요.");
+const pvTrack = pv.addTextTrack("subtitles", t("trackLabel"), "ko");
+const pvCue = new VTTCue(0, 3600, t("previewText"));
 pvTrack.addCue(pvCue);
 pvTrack.mode = "showing";
 const pvStyle = document.createElement("style");
 document.head.appendChild(pvStyle);
 
 const GROUPS = [
-  ["size", "글자 크기", S.SIZES.map(([v, l]) => [v, l])],
-  ["color", "글자색", S.COLORS.map(([v, l]) => [v, `<i class="sw" style="background:${v}"></i>${l}`])],
-  ["bg", "배경", S.BGS.map(([v, l]) => [v, l])],
-  ["edge", "글자 테두리", S.EDGES.map(([v, l]) => [v, l])],
-  ["position", "위치", S.POSITIONS.map(([v, l]) => [v, l])],
+  ["size", t("fSize"), S.SIZES.map(([v, l]) => [v, l])],
+  ["color", t("fColor"), S.COLORS.map(([v, l]) => [v, `<i class="sw" style="background:${v}"></i>${l}`])],
+  ["bg", t("fBg"), S.BGS.map(([v, l]) => [v, l])],
+  ["edge", t("fEdge"), S.EDGES.map(([v, l]) => [v, l])],
+  ["position", t("fPos"), S.POSITIONS.map(([v, l]) => [v, l])],
 ];
 
 function renderControls() {
@@ -64,7 +69,7 @@ async function renderCommands() {
   const cmds = await chrome.commands.getAll();
   $("cmds").innerHTML = cmds
     .filter((c) => c.description)
-    .map((c) => `<tr><td>${c.description}</td><td>${c.shortcut ? `<kbd>${c.shortcut}</kbd>` : `<span class="none">지정 안 됨</span>`}</td></tr>`)
+    .map((c) => `<tr><td>${c.description}</td><td>${c.shortcut ? `<kbd>${c.shortcut}</kbd>` : `<span class="none">${t("notSet")}</span>`}</td></tr>`)
     .join("");
 }
 $("shortcuts").onclick = () => chrome.tabs.create({ url: "chrome://extensions/shortcuts" });
@@ -91,12 +96,12 @@ async function renderSaved() {
 
   const used = await chrome.storage.local.getBytesInUse(urls.flatMap((u) => ["cues:" + u, "meta:" + u, "sync:" + u]));
   $("savedsum").textContent = items.length
-    ? `${items.length}개 · ${fmtSize(used)} 사용 중 (한도 10 MB의 ${Math.max(1, Math.round((used / LIMIT) * 100))}%)`
-    : "한 번 만든 자막은 여기 저장돼서, 같은 영상을 다시 열면 크레딧 없이 바로 붙어요.";
+    ? t("savedSummary", items.length, fmtSize(used), Math.max(1, Math.round((used / LIMIT) * 100)))
+    : t("savedDesc");
   $("clearall").hidden = !items.length;
 
   if (!items.length) {
-    $("saved").innerHTML = `<li class="empty">아직 저장된 자막이 없어요.</li>`;
+    $("saved").innerHTML = `<li class="empty">${t("savedEmpty")}</li>`;
     return;
   }
   $("saved").innerHTML = items.map((it, i) => {
@@ -104,12 +109,12 @@ async function renderSaved() {
     if (!title) {
       try { const u = new URL(it.url); title = u.hostname + u.pathname; } catch { title = it.url; }
     }
-    const parts = [it.lines + "줄", fmtTime(it.duration)];
-    if (it.createdAt) parts.push(new Date(it.createdAt).toLocaleDateString("ko-KR"));
-    if (it.sync) parts.push("싱크 " + (it.sync > 0 ? "+" : "−") + Math.abs(it.sync).toFixed(1) + "초");
+    const parts = [t("lines", it.lines), fmtTime(it.duration)];
+    if (it.createdAt) parts.push(new Date(it.createdAt).toLocaleDateString(chrome.i18n.getUILanguage()));
+    if (it.sync) parts.push(t("syncShort", (it.sync > 0 ? "+" : "−") + Math.abs(it.sync).toFixed(1)));
     return `<li><div class="info"><div class="title" title="${esc(it.url)}">${esc(title)}</div>
       <div class="meta">${esc(parts.join(" · "))}</div></div>
-      <button class="sub small" data-i="${i}" aria-label="${esc(title)} 자막 지우기">지우기</button></li>`;
+      <button class="sub small" data-i="${i}" aria-label="${esc(t("deleteAria", title))}">${t("delete")}</button></li>`;
   }).join("");
   for (const btn of $("saved").querySelectorAll("button[data-i]")) {
     const url = items[+btn.dataset.i].url;
@@ -122,13 +127,13 @@ let clearArmed = null;
 $("clearall").onclick = async () => {
   const btn = $("clearall");
   if (!clearArmed) {
-    btn.textContent = "정말 모두 지울까요? 한 번 더 누르세요";
-    clearArmed = setTimeout(() => { clearArmed = null; btn.textContent = "모두 지우기"; }, 4000);
+    btn.textContent = t("clearConfirm");
+    clearArmed = setTimeout(() => { clearArmed = null; btn.textContent = t("clearAll"); }, 4000);
     return;
   }
   clearTimeout(clearArmed);
   clearArmed = null;
-  btn.textContent = "모두 지우기";
+  btn.textContent = t("clearAll");
   const keys = Object.keys(await chrome.storage.local.get(null)).filter((k) => /^(cues|meta|sync):/.test(k));
   await chrome.storage.local.remove(keys);
 };
@@ -140,16 +145,16 @@ chrome.storage.onChanged.addListener((ch, area) => {
 async function renderKeyState() {
   const { apiKey } = await chrome.storage.local.get("apiKey");
   $("keystate").textContent = apiKey
-    ? "저장된 키: ••••" + apiKey.slice(-4) + " · 이 브라우저에만 저장돼요."
-    : "아직 키가 없어요. JBNU 게이트웨이 API 키를 넣어 주세요.";
+    ? t("keySaved", apiKey.slice(-4))
+    : t("keyNone");
 }
 $("save").onclick = async () => {
   const msg = $("keymsg");
   msg.className = "";
-  msg.textContent = "확인 중…";
+  msg.textContent = t("checking");
   const r = await chrome.runtime.sendMessage({ type: "saveKey", apiKey: $("key").value.trim() });
   msg.className = r.ok ? "ok" : "err";
-  msg.textContent = r.ok ? "✓ 저장했어요." : "✗ " + r.message;
+  msg.textContent = r.ok ? t("keySavedOk") : "✗ " + r.message;
   if (r.ok) $("key").value = "";
   renderKeyState();
 };

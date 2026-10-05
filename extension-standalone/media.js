@@ -31,7 +31,7 @@ async function fetchMedia(url) {
   } catch (e) {
     throw new AppError("NETWORK", e.message + ": " + url.slice(0, 80));
   }
-  if (!r.ok) throw new AppError("MEDIA_BLOCKED", "영상 서버 응답 " + r.status + ": " + url.slice(0, 80));
+  if (!r.ok) throw new AppError("MEDIA_BLOCKED", "HTTP " + r.status + ": " + url.slice(0, 80));
   return r;
 }
 
@@ -68,7 +68,7 @@ export async function download(url, report) {
     while (next < parts.length) {
       const i = next++;
       blobs[i] = await (await fetchMedia(parts[i])).blob();
-      report("download", "영상 조각 " + ++done + "/" + parts.length);
+      report("download", ++done + "/" + parts.length);
     }
   };
   await Promise.all(Array.from({ length: 6 }, worker));
@@ -85,7 +85,7 @@ export async function extractAudio(blob, report) {
   await ff.mount("WORKERFS", { blobs: [{ name: "media", data: blob }] }, "/mnt");
   try {
     const code = await ff.exec(["-i", "/mnt/media", "-vn", "-ac", "1", "-ar", "16000", "-c:a", "aac", "-b:a", "32k", "out.m4a"]);
-    if (code !== 0) throw new AppError("FFMPEG", "ffmpeg 코드 " + code);
+    if (code !== 0) throw new AppError("FFMPEG", "ffmpeg exit " + code);
     const audio = await ff.readFile("out.m4a");
     await ff.deleteFile("out.m4a");
     return audio;

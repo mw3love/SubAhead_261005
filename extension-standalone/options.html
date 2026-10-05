@@ -1,8 +1,8 @@
 <!doctype html>
-<html lang="ko">
+<html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>미리 자막 설정</title>
+<title data-i18n="optTitle"></title>
 <style>
   :root {
     --bg: #ffffff; --fg: #0f172a; --muted: #64748b; --line: #e2e8f0; --card: #f8fafc;
@@ -65,37 +65,37 @@
   }
 </style>
 <div class="wrap">
-  <header><img src="icons/icon48.png" alt=""><h1>미리 자막 설정</h1></header>
+  <header><img src="icons/icon48.png" alt=""><h1 data-i18n="optTitle"></h1></header>
 
   <section aria-labelledby="h-style">
-    <h2 id="h-style">자막 모양</h2>
-    <p class="desc">바꾸면 열려 있는 영상의 자막에도 바로 적용돼요.</p>
+    <h2 id="h-style" data-i18n="styleTitle"></h2>
+    <p class="desc" data-i18n="styleDesc"></p>
     <div class="preview"><video id="pv" src="assets/preview.mp4" muted loop autoplay playsinline></video></div>
     <div id="controls"></div>
-    <div class="actions"><button id="reset" class="sub">기본값으로</button></div>
+    <div class="actions"><button id="reset" class="sub" data-i18n="resetDefault"></button></div>
   </section>
 
   <section aria-labelledby="h-keys">
-    <h2 id="h-keys">단축키</h2>
-    <p class="desc">영상을 보는 중에 누르면 돼요. 키는 Chrome 단축키 설정에서 바꿀 수 있어요.</p>
+    <h2 id="h-keys" data-i18n="keysTitle"></h2>
+    <p class="desc" data-i18n="keysDesc"></p>
     <table id="cmds"></table>
-    <button id="shortcuts" class="sub">단축키 바꾸기</button>
+    <button id="shortcuts" class="sub" data-i18n="changeShortcuts"></button>
   </section>
 
   <section aria-labelledby="h-saved">
-    <h2 id="h-saved">저장된 자막</h2>
-    <p class="desc" id="savedsum">한 번 만든 자막은 여기 저장돼서, 같은 영상을 다시 열면 크레딧 없이 바로 붙어요.</p>
+    <h2 id="h-saved" data-i18n="savedSubs"></h2>
+    <p class="desc" id="savedsum"></p>
     <ul id="saved" class="list"></ul>
-    <div class="actions"><button id="clearall" class="sub danger" hidden>모두 지우기</button></div>
+    <div class="actions"><button id="clearall" class="sub danger" hidden data-i18n="clearAll"></button></div>
   </section>
 
   <section aria-labelledby="h-api">
-    <h2 id="h-api">게이트웨이 키</h2>
-    <p class="desc" id="keystate">JBNU 게이트웨이 API 키. 이 브라우저에만 저장돼요.</p>
+    <h2 id="h-api" data-i18n="apiTitle"></h2>
+    <p class="desc" id="keystate" data-i18n="apiDesc"></p>
     <div class="keyrow">
-      <label for="key" hidden>API 키</label>
-      <input id="key" type="password" placeholder="새 키 붙여넣기" autocomplete="off">
-      <button id="save">저장</button>
+      <label for="key" hidden data-i18n="apiKeyLabel"></label>
+      <input id="key" type="password" data-i18n-placeholder="newKeyPlaceholder" autocomplete="off">
+      <button id="save" data-i18n="save"></button>
     </div>
     <div id="keymsg" role="status"></div>
   </section>
