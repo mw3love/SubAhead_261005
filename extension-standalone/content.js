@@ -12,7 +12,8 @@ const STAGE_LABEL = {
 const TRACK_LABEL = t("trackLabel");
 const SYNC_STEP = 0.5;
 
-let track = null, style = MiriStyle.DEFAULT, syncOffset = 0, currentUrl = null, askedSrc = null;
+let track = null, trackVideo = null, placedAt; // placedAt: 마지막으로 자막 줄에 적용한 위치(undefined = 아직)
+let style = MiriStyle.normalize(), syncOffset = 0, currentUrl = null, askedSrc = null;
 
 function mainVideo() {
   return [...document.querySelectorAll("video")]
@@ -28,7 +29,10 @@ function applyStyle() {
     document.documentElement.appendChild(el);
   }
   el.textContent = MiriStyle.css(style);
-  if (!track || !track.cues) return;
+  // 위치가 바뀔 때만 자막 줄 위치를 다시 정한다(크기만 바뀔 때 다시 그리면 깜박인다)
+  const at = style.line + "|" + style.pos;
+  if (!track || !track.cues || placedAt === at) return;
+  placedAt = at;
   for (const c of track.cues) MiriStyle.place(c, style);
   // 이미 그려진 자막은 위치를 바로 다시 계산하지 않을 때가 있어 한 번 껐다 켠다
   if (track.mode === "showing") {
@@ -42,6 +46,8 @@ function attachCues(cues, url, offset) {
   if (!video) return;
   for (const old of video.textTracks) if (old.label === TRACK_LABEL) old.mode = "disabled";
   track = video.addTextTrack("subtitles", TRACK_LABEL, "ko");
+  trackVideo = video;
+  placedAt = undefined;
   currentUrl = url;
   syncOffset = offset || 0;
   askedSrc = video.currentSrc;
@@ -123,6 +129,90 @@ chrome.storage.onChanged.addListener((ch, area) => {
   style = MiriStyle.normalize(ch.style.newValue);
   if (track) applyStyle();
 });
+
+// Alt(Mac 은 Option)+휠로 크기 조절: 자막이 붙은 영상 위 어디서든. Alt 없는 휠은 절대 가로채지 않는다.
+// 재생기가 영상 위에 투명한 막을 덮어도 되도록 문서 전체에서 받는다.
+const WHEEL_UNIT = 100; // 마우스 한 칸(보통 약 100)마다 한 단계(크기 5). 트랙패드의 작은 신호는 모인 만큼 센다
+const WHEEL_FAST = 150; // ms. 직전 단계 뒤 이보다 빨리 이어서 굴리면 한 단계를 두 배(크기 10)로
+const WHEEL_IDLE = 300; // ms. 이만큼 쉬었다 굴리거나 방향을 바꾸면 남은 양은 버리고 새로 센다
+let wheelAcc = 0, wheelLast = 0, wheelEvent = 0, wheelSave = null;
+function onWheel(e) {
+  if (!e.altKey || !style.wheel || !track || !trackVideo) return;
+  const r = trackVideo.getBoundingClientRect();
+  if (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) return;
+  e.preventDefault();
+  e.stopImmediatePropagation();
+  // 굴린 만큼 바로 반영하고, 한 단계가 안 되는 나머지는 같은 방향으로 이어 굴릴 때만 넘긴다
+  const delta = e.deltaMode === 1 ? e.deltaY * 16 : e.deltaY;
+  const now = performance.now();
+  if (now - wheelEvent > WHEEL_IDLE || Math.sign(delta) !== Math.sign(wheelAcc)) wheelAcc = 0;
+  wheelEvent = now;
+  wheelAcc += delta;
+  const steps = Math.trunc(wheelAcc / WHEEL_UNIT);
+  if (!steps) return;
+  wheelAcc -= steps * WHEEL_UNIT;
+  const fast = now - wheelLast < WHEEL_FAST;
+  wheelLast = now;
+  // 위로 돌리면(deltaY<0) 커진다
+  const size = MiriStyle.clampSize(style.size - steps * MiriStyle.SIZE_STEP * (fast ? 2 : 1));
+  if (size === style.size) return;
+  style = { ...style, size };
+  applyStyle();
+  notice(t("sizeValue", size));
+  clearTimeout(wheelSave);
+  wheelSave = setTimeout(() => chrome.storage.local.set({ style }), 300);
+}
+document.addEventListener("wheel", onWheel, { capture: true, passive: false });
+
+// Alt(Mac 은 Option)+드래그로 자막 위치 옮기기: 영상 위에서 끌면(위아래·좌우) 따라오고, 놓으면 저장한다.
+// 끄는 동안에는 사이트의 클릭(재생·멈춤)과 글자 선택이 일어나지 않게 막는다.
+let drag = null, dragFrame = 0;
+function overVideo(e) {
+  if (!trackVideo) return false;
+  const r = trackVideo.getBoundingClientRect();
+  return e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom;
+}
+function swallow(e) {
+  e.preventDefault();
+  e.stopImmediatePropagation();
+}
+function onPointerDown(e) {
+  if (!e.altKey || e.button !== 0 || !style.wheel || !track || !overVideo(e)) return;
+  swallow(e);
+  const r = trackVideo.getBoundingClientRect();
+  drag = {
+    x: e.clientX, y: e.clientY, w: r.width, h: r.height,
+    fromLine: style.line == null ? MiriStyle.LINE_BOTTOM : style.line,
+    fromPos: style.pos == null ? 50 : style.pos,
+  };
+  document.documentElement.style.cursor = "move";
+}
+function onPointerMove(e) {
+  if (!drag) return;
+  swallow(e);
+  // 위아래로 거의 움직이지 않았으면(옆으로만 끌 때) "아래(기본)" 위치는 그대로 둔다
+  const keepAuto = style.line == null && Math.abs(e.clientY - drag.y) < 4;
+  const line = keepAuto ? null : MiriStyle.clampLine(drag.fromLine + ((e.clientY - drag.y) / drag.h) * 100);
+  const posNum = MiriStyle.clampPos(drag.fromPos + ((e.clientX - drag.x) / drag.w) * 100);
+  const pos = posNum === 50 ? null : posNum;
+  if (line === style.line && pos === style.pos) return;
+  style = { ...style, line, pos };
+  cancelAnimationFrame(dragFrame);
+  dragFrame = requestAnimationFrame(applyStyle);
+  notice(t("posNotice", "↕ " + (line == null ? t("posBottom") : line + "%") + "  ↔ " + posNum + "%"));
+}
+function onPointerUp(e) {
+  if (!drag) return;
+  swallow(e);
+  drag = null;
+  document.documentElement.style.cursor = "";
+  chrome.storage.local.set({ style });
+  // 끌기 뒤에 따라오는 클릭이 재생·멈춤을 하지 않도록 잠깐만 클릭을 삼킨다
+  window.addEventListener("click", swallow, { capture: true, once: true });
+  setTimeout(() => window.removeEventListener("click", swallow, { capture: true }), 300);
+}
+for (const [type, fn] of [["pointerdown", onPointerDown], ["pointermove", onPointerMove], ["pointerup", onPointerUp]])
+  window.addEventListener(type, fn, { capture: true, passive: false });
 
 // 영상이 준비되면(또는 다른 영상으로 바뀌면) 저장된 자막이 있는지 물어본다.
 function askAuto() {

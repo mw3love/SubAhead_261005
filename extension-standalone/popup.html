@@ -2,60 +2,179 @@
 <html>
 <meta charset="utf-8">
 <style>
+  /* 항상 다크 */
   :root {
-    --bg: #ffffff; --fg: #0f172a; --muted: #64748b; --line: #e2e8f0; --card: #f8fafc;
-    --brand: #1f3a8a; --brand-fg: #ffffff; --accent: #facc15; --ok: #15803d; --err: #b91c1c; --err-bg: #fef2f2;
-  }
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --bg: #0f172a; --fg: #e2e8f0; --muted: #94a3b8; --line: #1e293b; --card: #1e293b;
-      --brand: #3b5bdb; --ok: #4ade80; --err: #f87171; --err-bg: #2a1215;
-    }
+    --bg: #0f172a; --panel: #1e293b; --line: #1e293b; --line2: #334155;
+    --fg: #e2e8f0; --muted: #94a3b8; --accent: #facc15; --accent-fg: #0f172a;
+    --ok: #4ade80; --err: #f87171; --err-bg: #2a1215;
+    color-scheme: dark;
   }
   * { box-sizing: border-box; }
-  body { width: 300px; margin: 0; background: var(--bg); color: var(--fg);
+  body { width: 320px; margin: 0; background: var(--bg); color: var(--fg);
          font: 13px/1.5 -apple-system, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif; }
-  header { display: flex; align-items: center; gap: 8px; padding: 12px 14px; border-bottom: 1px solid var(--line); }
-  header img { width: 20px; height: 20px; }
+  header { display: flex; align-items: center; gap: 8px; padding: 12px 14px 0; }
+  header img { width: 22px; height: 22px; }
   header h1 { font-size: 14px; margin: 0; flex: 1; }
-  .chip { font-size: 11px; color: var(--muted); background: var(--card); border: 1px solid var(--line);
-          border-radius: 999px; padding: 2px 8px; }
-  main { padding: 14px; }
-  h2 { font-size: 15px; margin: 0 0 6px; }
+  .chip { font-size: 11px; color: var(--muted); }
+  nav { display: flex; gap: 4px; padding: 8px 14px 0; border-bottom: 1px solid var(--line); }
+  nav button { width: auto; background: none; border: 0; border-bottom: 2px solid transparent; border-radius: 0;
+               color: var(--muted); padding: 8px 12px; font-weight: 500; }
+  nav button[aria-selected="true"] { color: var(--accent); border-bottom-color: var(--accent); font-weight: 700; }
+  section { padding: 14px; border-bottom: 1px solid var(--line); }
+  section:last-of-type { border-bottom: 0; }
+  h2 { font-size: 14px; margin: 0 0 6px; }
+  h3 { font-size: 12px; margin: 0 0 8px; color: var(--muted); }
   p { margin: 0 0 10px; color: var(--muted); }
-  .card { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; margin-bottom: 12px; }
+  .card { background: var(--panel); border: 1px solid var(--line2); border-radius: 10px; padding: 10px 12px; margin-bottom: 12px; }
   .row { display: flex; justify-content: space-between; padding: 2px 0; }
   .row span:first-child { color: var(--muted); }
   .warn { color: var(--err); margin-top: 6px; }
   button { width: 100%; border: 0; border-radius: 8px; padding: 9px; font: inherit; font-weight: 600; cursor: pointer;
-           background: var(--brand); color: var(--brand-fg); }
-  button.sub { background: transparent; color: var(--fg); border: 1px solid var(--line); font-weight: 500; margin-top: 8px; }
+           background: var(--accent); color: var(--accent-fg); }
+  button.sub { background: var(--panel); color: var(--fg); border: 1px solid var(--line2); font-weight: 500; }
+  button.link { width: auto; background: none; color: var(--accent); padding: 0; font-weight: 600; }
   button:disabled { opacity: .45; cursor: default; }
   button:focus-visible, input:focus-visible, a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  input[type=url], input[type=password] { width: 100%; padding: 8px 10px; border: 1px solid var(--line2); border-radius: 8px;
+           background: var(--bg); color: var(--fg); font: inherit; margin-bottom: 8px; }
   .lbl { display: block; font-size: 12px; color: var(--muted); margin: 0 0 4px; }
-  input { width: 100%; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg);
-          color: var(--fg); font: inherit; margin-bottom: 8px; }
+  .status { display: flex; align-items: center; gap: 8px; font-weight: 700; margin-bottom: 4px; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ok); flex: none; }
+  .pair { display: flex; gap: 8px; margin-top: 10px; }
   .steps { list-style: none; margin: 0 0 10px; padding: 0; }
   .steps li { display: flex; align-items: center; gap: 8px; padding: 4px 0; color: var(--muted); }
-  .steps li i { width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--line); flex: none;
+  .steps li i { width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--line2); flex: none;
                 display: grid; place-items: center; font-style: normal; font-size: 11px; }
   .steps li.done { color: var(--fg); } .steps li.done i { border-color: var(--ok); color: var(--ok); }
   .steps li.now { color: var(--fg); font-weight: 600; }
-  .steps li.now i { border-color: var(--brand); border-top-color: transparent; animation: spin .9s linear infinite; }
+  .steps li.now i { border-color: var(--accent); border-top-color: transparent; animation: spin .9s linear infinite; }
   .steps li small { margin-left: auto; font-weight: 400; color: var(--muted); }
   @keyframes spin { to { transform: rotate(360deg); } }
-  .big { font-size: 28px; line-height: 1; margin-bottom: 8px; color: var(--ok); }
   .error { background: var(--err-bg); border-color: transparent; color: var(--err); }
   details { margin-top: 8px; color: var(--muted); font-size: 11px; word-break: break-all; }
-  footer { border-top: 1px solid var(--line); padding: 8px 14px; text-align: right; }
-  footer a { color: var(--muted); font-size: 12px; text-decoration: none; }
+
+  /* 자막 모양 */
+  .preview { position: relative; width: 100%; aspect-ratio: 16 / 9; border-radius: 10px; overflow: hidden;
+             background: #020617; border: 1px solid var(--line2); margin-bottom: 14px; }
+  .preview .sky { position: absolute; inset: 0 0 38% 0; background: #1e293b; }
+  .preview .hill1 { position: absolute; left: 12%; bottom: 30%; width: 26%; height: 34%; border-radius: 50% 50% 0 0; background: #334155; }
+  .preview .hill2 { position: absolute; right: 16%; bottom: 30%; width: 18%; height: 22%; border-radius: 50% 50% 0 0; background: #273449; }
+  .preview .cap { position: absolute; left: 0; right: 0; bottom: 8%; display: flex; justify-content: center; padding: 0 8%; }
+  .preview .cap span { line-height: 1.3; padding: 1px 6px; border-radius: 2px; text-align: center; }
+  .preview .tag { position: absolute; left: 8px; top: 6px; font-size: 10px; color: var(--muted); }
+  .field { margin-bottom: 14px; }
+  .field .head { display: flex; justify-content: space-between; margin-bottom: 8px; font-weight: 600; }
+  .field .head output { color: var(--muted); font-weight: 400; font-variant-numeric: tabular-nums; }
+  input[type=range] { -webkit-appearance: none; appearance: none; width: 100%; height: 6px; border-radius: 999px; margin: 0; cursor: pointer; }
+  input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 18px; height: 18px; border-radius: 50%;
+                                            background: var(--fg); border: 2px solid var(--accent); }
+  .grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  .opts { display: flex; gap: 8px; }
+  .opts button { width: 32px; height: 32px; padding: 0; border: 1px solid var(--line2); }
+  .opts button[aria-pressed="true"] { border: 3px solid var(--accent); }
+  .swatch { border-radius: 50%; }
+  .tile { border-radius: 6px; font-size: 11px; color: #fff; font-weight: 600; }
+  .tile.none { background: transparent; border-style: dashed; border-color: #64748b; }
+  .tile.none[aria-pressed="true"] { border-style: dashed; }
+  .tile.half { background: rgba(255,255,255,.18); }
+  .tile.dark { background: #020617; }
+  .foot { padding: 10px 14px; border-top: 1px solid var(--line); color: var(--muted); font-size: 11px; text-align: center; }
+
+  /* 설정 */
+  .conn { display: flex; align-items: center; gap: 8px; background: var(--panel); border: 1px solid var(--line2); border-radius: 8px; padding: 8px 10px; }
+  .conn span.host { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .conn .dot.off { background: var(--muted); }
+  #keyform { margin-top: 10px; }
+  #keymsg { margin-top: 4px; min-height: 1.4em; font-size: 12px; }
+  #keymsg.ok { color: var(--ok); } #keymsg.err { color: var(--err); }
+  .listhead { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px; }
+  .listhead h3 { margin: 0; }
+  .listhead span { font-size: 11px; color: var(--muted); }
+  ul.list { list-style: none; margin: 0; padding: 0; max-height: 200px; overflow: auto; }
+  ul.list li { display: flex; align-items: center; gap: 8px; padding: 8px 0; border-bottom: 1px solid var(--line); }
+  ul.list li:last-child { border-bottom: 0; }
+  ul.list .info { flex: 1; min-width: 0; }
+  ul.list .title { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  ul.list .meta { font-size: 11px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  ul.list .empty { color: var(--muted); justify-content: center; border: 0; }
+  ul.list button.del { width: 30px; height: 30px; padding: 0; background: none; border-radius: 6px; display: grid; place-items: center; }
+  button.danger { width: auto; display: block; margin: 8px 0 0 auto; padding: 4px 10px; font-size: 12px; font-weight: 500;
+                  background: none; color: var(--err); border: 1px solid var(--err); border-radius: 6px; }
+  .check { display: flex; align-items: center; gap: 8px; cursor: pointer; margin-bottom: 10px; }
+  .check input { width: 16px; height: 16px; margin: 0; accent-color: var(--accent); }
+  .between { display: flex; justify-content: space-between; align-items: center; }
 </style>
 <header>
   <img src="icons/icon32.png" alt="">
-  <h1 id="title"></h1>
+  <h1 data-i18n="extName"></h1>
   <span class="chip" id="credits" hidden></span>
 </header>
-<main id="main" aria-live="polite"></main>
-<footer><a href="#" id="opt"></a></footer>
+<nav role="tablist">
+  <button role="tab" id="tab-subs" aria-controls="panel-subs" aria-selected="true" data-i18n="tabSubs"></button>
+  <button role="tab" id="tab-settings" aria-controls="panel-settings" aria-selected="false" data-i18n="tabSettings"></button>
+</nav>
+
+<div role="tabpanel" id="panel-subs" aria-labelledby="tab-subs">
+  <section id="main" aria-live="polite"></section>
+  <section id="look" hidden>
+    <div class="preview" role="img" id="preview">
+      <div class="sky"></div><div class="hill1"></div><div class="hill2"></div>
+      <div class="cap"><span id="pvtext" data-i18n="previewText"></span></div>
+      <span class="tag" data-i18n="preview"></span>
+    </div>
+    <div class="field">
+      <div class="head"><label for="size" data-i18n="fSize"></label><output id="sizeval" for="size"></output></div>
+      <input id="size" type="range" min="0" max="100" step="5">
+    </div>
+    <div class="grid2">
+      <div>
+        <div class="field head" style="margin-bottom:8px" data-i18n="fColor"></div>
+        <div class="opts">
+          <button class="swatch" data-color="#ffffff" style="background:#ffffff" data-i18n-label="colorWhite"></button>
+          <button class="swatch" data-color="#facc15" style="background:#facc15" data-i18n-label="colorYellow"></button>
+        </div>
+      </div>
+      <div>
+        <div class="field head" style="margin-bottom:8px" data-i18n="fBg"></div>
+        <div class="opts">
+          <button class="tile none" data-bg="none" data-i18n-label="bgNone">가</button>
+          <button class="tile half" data-bg="half" data-i18n-label="bgHalf">가</button>
+          <button class="tile dark" data-bg="dark" data-i18n-label="bgDark">가</button>
+        </div>
+      </div>
+    </div>
+  </section>
+  <div class="foot" id="foot" data-i18n="footNote" hidden></div>
+</div>
+
+<div role="tabpanel" id="panel-settings" aria-labelledby="tab-settings" hidden>
+  <section>
+    <h3 data-i18n="apiTitle"></h3>
+    <div class="conn">
+      <span class="dot" id="conndot"></span>
+      <span class="host" id="connhost"></span>
+      <button class="link" id="connchange" data-i18n="change"></button>
+    </div>
+    <div id="keyform" hidden>
+      <p data-i18n="popupKeyDesc"></p>
+      <label for="s-baseurl" class="lbl" data-i18n="baseUrlLabel"></label>
+      <input id="s-baseurl" type="url" data-i18n-placeholder="baseUrlPlaceholder" autocomplete="off" spellcheck="false">
+      <label for="s-key" class="lbl" data-i18n="apiKeyLabel"></label>
+      <input id="s-key" type="password" data-i18n-placeholder="newKeyPlaceholder" autocomplete="off">
+      <button id="s-save" data-i18n="saveAndStart"></button>
+      <div id="keymsg" role="status"></div>
+    </div>
+  </section>
+  <section>
+    <div class="listhead"><h3 data-i18n="savedSubs"></h3><span id="savedsum"></span></div>
+    <ul class="list" id="saved"></ul>
+    <button class="danger" id="clearall" hidden data-i18n="clearAll"></button>
+  </section>
+  <section>
+    <label class="check"><input type="checkbox" id="wheel"><span data-i18n="fWheel"></span></label>
+    <div class="between"><span data-i18n="shortcuts"></span><button class="link" id="shortcuts" data-i18n="shortcutsLink"></button></div>
+  </section>
+</div>
+<script src="cue-style.js"></script>
 <script src="popup.js"></script>
 </html>

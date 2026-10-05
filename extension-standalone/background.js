@@ -248,6 +248,17 @@ async function setReferer(page, baseUrl) {
   await chrome.declarativeNetRequest.updateSessionRules({ removeRuleIds: [REFERER_RULE], addRules });
 }
 
+// 다시 만들기: 저장된 자막을 지우고(맞춘 싱크는 남김) 처음부터 다시 받아 적는다
+async function remake(tabId) {
+  let videos = [];
+  try {
+    videos = await findVideos(tabId);
+  } catch {}
+  const url = await pickSource(tabId, videos);
+  if (url) await chrome.storage.local.remove(["cues:" + url, "meta:" + url]);
+  return start(tabId);
+}
+
 async function start(tabId) {
   const server = await getServer();
   if (!server) return fail(tabId, null, "NO_KEY");
@@ -281,6 +292,7 @@ chrome.runtime.onMessage.addListener((msg, sender, reply) => {
     return true;
   }
   if (msg.type === "start") start(msg.tabId);
+  if (msg.type === "remake") remake(msg.tabId);
   if (msg.type === "autoAttach" && sender.tab) autoAttach(sender.tab.id, sender.frameId, msg.video);
   if (msg.type === "progress") {
     chrome.storage.session.get("job:" + msg.tabId).then((s) => {
@@ -325,9 +337,9 @@ async function onCommand(name, tab) {
   if (!tab) return;
   if (name === "size") {
     const style = MiriStyle.normalize((await chrome.storage.local.get("style")).style);
-    const [key, label] = MiriStyle.nextSize(style.size);
-    await chrome.storage.local.set({ style: { ...style, size: key } });
-    chrome.tabs.sendMessage(tab.id, { type: "notice", title: t("sizeNotice", label) }).catch(() => {});
+    const size = MiriStyle.nextSize(style.size);
+    await chrome.storage.local.set({ style: { ...style, size } });
+    chrome.tabs.sendMessage(tab.id, { type: "notice", title: t("sizeValue", size) }).catch(() => {});
   } else {
     chrome.tabs.sendMessage(tab.id, { type: "command", name }).catch(() => {});
   }

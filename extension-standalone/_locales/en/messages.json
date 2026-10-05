@@ -1,12 +1,12 @@
 {
   "extName": {
-    "message": "Miri Subtitles"
+    "message": "SubAhead"
   },
   "extDesc": {
     "message": "Transcribes a video's audio ahead of time so Korean subtitles stay in sync wherever you seek. Requires your own API gateway address and key."
   },
   "trackLabel": {
-    "message": "Miri Subtitles"
+    "message": "SubAhead"
   },
   "cmdToggle": {
     "message": "Toggle subtitles"
@@ -118,7 +118,7 @@
     "message": "Please enter an API key."
   },
   "toastTitle": {
-    "message": "Miri Subtitles · $P1$",
+    "message": "SubAhead · $P1$",
     "placeholders": {
       "p1": {
         "content": "$1"
@@ -164,25 +164,16 @@
   "syncReset": {
     "message": "Back to original"
   },
-  "sizeNotice": {
-    "message": "Subtitle size: $P1$",
+  "fWheel": {
+    "message": "Alt+wheel to resize"
+  },
+  "posNotice": {
+    "message": "Subtitle position $P1$",
     "placeholders": {
       "p1": {
         "content": "$1"
       }
     }
-  },
-  "sizeS": {
-    "message": "Small"
-  },
-  "sizeM": {
-    "message": "Medium"
-  },
-  "sizeL": {
-    "message": "Large"
-  },
-  "sizeXL": {
-    "message": "Extra large"
   },
   "colorWhite": {
     "message": "White"
@@ -190,41 +181,14 @@
   "colorYellow": {
     "message": "Yellow"
   },
-  "colorMint": {
-    "message": "Mint"
-  },
-  "colorSky": {
-    "message": "Sky blue"
-  },
   "bgNone": {
     "message": "None"
-  },
-  "bgLight": {
-    "message": "Light"
   },
   "bgDark": {
     "message": "Dark"
   },
-  "bgBlack": {
-    "message": "Black"
-  },
-  "edgeNone": {
-    "message": "None"
-  },
-  "edgeShadow": {
-    "message": "Shadow"
-  },
-  "edgeOutline": {
-    "message": "Outline"
-  },
   "posBottom": {
     "message": "Bottom"
-  },
-  "posRaised": {
-    "message": "Raised"
-  },
-  "posTop": {
-    "message": "Top"
   },
   "popupKeyTitle": {
     "message": "Connect an API gateway"
@@ -334,9 +298,6 @@
   "details": {
     "message": "Details"
   },
-  "settings": {
-    "message": "Settings"
-  },
   "remaining": {
     "message": "$P1$ left",
     "placeholders": {
@@ -375,64 +336,11 @@
       }
     }
   },
-  "optTitle": {
-    "message": "Miri Subtitles settings"
-  },
-  "styleTitle": {
-    "message": "Subtitle style"
-  },
-  "styleDesc": {
-    "message": "Changes apply right away to videos that are open."
-  },
   "previewText": {
-    "message": "This is how subtitles look. They stay in sync wherever you seek."
+    "message": "This is how subtitles look"
   },
   "fSize": {
-    "message": "Text size"
-  },
-  "fColor": {
-    "message": "Text color"
-  },
-  "fBg": {
-    "message": "Background"
-  },
-  "fEdge": {
-    "message": "Text edge"
-  },
-  "fPos": {
-    "message": "Position"
-  },
-  "resetDefault": {
-    "message": "Reset to default"
-  },
-  "keysTitle": {
-    "message": "Keyboard shortcuts"
-  },
-  "keysDesc": {
-    "message": "Press them while watching. You can change the keys in Chrome's shortcut settings."
-  },
-  "notSet": {
-    "message": "Not set"
-  },
-  "changeShortcuts": {
-    "message": "Change shortcuts"
-  },
-  "savedDesc": {
-    "message": "Subtitles you create are saved here, so reopening the same video applies them instantly at no cost."
-  },
-  "savedSummary": {
-    "message": "$P1$ saved · $P2$ used ($P3$% of the 10 MB limit)",
-    "placeholders": {
-      "p1": {
-        "content": "$1"
-      },
-      "p2": {
-        "content": "$2"
-      },
-      "p3": {
-        "content": "$3"
-      }
-    }
+    "message": "Size"
   },
   "savedEmpty": {
     "message": "No saved subtitles yet."
@@ -453,9 +361,6 @@
       }
     }
   },
-  "delete": {
-    "message": "Delete"
-  },
   "deleteAria": {
     "message": "Delete subtitles for $P1$",
     "placeholders": {
@@ -472,9 +377,6 @@
   },
   "apiTitle": {
     "message": "API gateway"
-  },
-  "apiDesc": {
-    "message": "The address and key of an API gateway that provides the stt-async-v5 speech recognition model. Stored only in this browser."
   },
   "keySaved": {
     "message": "Connected: $P1$ · key ••••$P2$",
@@ -493,10 +395,70 @@
   "newKeyPlaceholder": {
     "message": "New key (only to change it)"
   },
-  "save": {
-    "message": "Save"
-  },
   "keySavedOk": {
     "message": "✓ Saved."
+  },
+  "tabSubs": {
+    "message": "Subtitles"
+  },
+  "tabSettings": {
+    "message": "Settings"
+  },
+  "preview": {
+    "message": "Preview"
+  },
+  "fColor": {
+    "message": "Color"
+  },
+  "fBg": {
+    "message": "Background"
+  },
+  "bgHalf": {
+    "message": "Semi-transparent"
+  },
+  "toggleSubs": {
+    "message": "Show/hide subtitles"
+  },
+  "remake": {
+    "message": "Create again"
+  },
+  "remakeCost": {
+    "message": "Create again (~$P1$)",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "footNote": {
+    "message": "Subtitles appear at the bottom center · Alt+wheel to resize"
+  },
+  "change": {
+    "message": "Change"
+  },
+  "shortcuts": {
+    "message": "Shortcuts"
+  },
+  "shortcutsLink": {
+    "message": "View/change"
+  },
+  "sizeValue": {
+    "message": "Subtitle size $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "savedCount": {
+    "message": "$P1$ saved · $P2$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      }
+    }
   }
 }
