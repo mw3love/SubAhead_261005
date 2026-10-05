@@ -1,7 +1,7 @@
 // 영상 받기 → ffmpeg.wasm 으로 소리만 뽑기 → 게이트웨이(Soniox)에 받아 적기. 암호화된 HLS 는 지원하지 않는다.
 // 진행 상황은 단계(stage)와 함께, 실패는 오류 종류(code)와 함께 background 로 보낸다.
 // 영상 받기·소리 뽑기는 media.js 에 있다.
-import { AppError, download, extractAudio } from "./media.js";
+import { AppError, download, extractAudio, stopFFmpeg } from "./media.js";
 
 const MODEL = "stt-async-v5";
 
@@ -30,8 +30,12 @@ async function transcribe(audio, { baseUrl, apiKey }, report) {
   form.append("file", new Blob([audio], { type: "audio/mp4" }), "audio.m4a");
   const r = await fetchGateway(baseUrl, "/audio/transcriptions/", { method: "POST", headers: auth, body: form });
   if (!r.operation_id) throw new AppError("STT_FAILED", "no operation_id: " + JSON.stringify(r).slice(0, 200));
+  // 시간 제한: 소리 길이의 3배, 적어도 3분. 게이트웨이가 답을 주지 않으면 끝없이 기다리지 않는다.
+  const limit = Math.max(180, 3 * (r.duration_seconds || 0)) * 1000;
+  const until = Date.now() + limit;
   while (true) {
     await new Promise((res) => setTimeout(res, 3000));
+    if (Date.now() > until) throw new AppError("TIMEOUT", "no result after " + Math.round(limit / 1000) + "s: " + r.operation_id);
     report("transcribe", "");
     const st = await fetchGateway(baseUrl, "/audio/transcriptions/" + r.operation_id + "/", { headers: auth });
     if (st.status === "completed") return { segments: st.segments || [], credits: r.credits_charged };
@@ -40,19 +44,36 @@ async function transcribe(audio, { baseUrl, apiKey }, report) {
   }
 }
 
+// 지금 하는 작업 번호(jobId). 취소되면 그 뒤의 진행·결과는 보내지 않고 다음 단계에서 멈춘다.
+let current = null;
+
 chrome.runtime.onMessage.addListener((msg) => {
-  if (msg.target !== "offscreen" || msg.type !== "transcribe") return;
-  const { tabId, frameId, url, baseUrl, apiKey } = msg;
-  const report = (stage, detail) => chrome.runtime.sendMessage({ type: "progress", tabId, url, stage, detail });
+  if (msg.target !== "offscreen") return;
+  if (msg.type === "cancel") {
+    if (current === msg.jobId) {
+      current = null;
+      stopFFmpeg();
+    }
+    return;
+  }
+  if (msg.type !== "transcribe") return;
+  const { jobId, tabId, frameId, url, baseUrl, apiKey } = msg;
+  current = jobId;
+  const alive = () => current === jobId;
+  const report = (stage, detail) => {
+    if (!alive()) throw new AppError("CANCELLED");
+    chrome.runtime.sendMessage({ type: "progress", jobId, tabId, url, stage, detail });
+  };
   (async () => {
     try {
       report("download", "");
       const media = await download(url, report);
       const audio = await extractAudio(media, report);
       const { segments, credits } = await transcribe(audio, { baseUrl, apiKey }, report);
-      chrome.runtime.sendMessage({ type: "result", tabId, frameId, url, segments, credits });
+      if (alive()) chrome.runtime.sendMessage({ type: "result", jobId, tabId, frameId, url, segments, credits });
     } catch (e) {
-      chrome.runtime.sendMessage({ type: "failed", tabId, url, code: e.code || "UNKNOWN", detail: e.code ? e.detail : String(e.message || e) });
+      if (alive())
+        chrome.runtime.sendMessage({ type: "failed", jobId, tabId, url, code: e.code || "UNKNOWN", detail: e.code ? e.detail : String(e.message || e) });
     }
   })();
 });

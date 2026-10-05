@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "__MSG_extName__",
-  "version": "1.5.0",
+  "version": "1.6.0",
   "default_locale": "en",
   "description": "__MSG_extDesc__",
   "icons": {
@@ -14,6 +14,7 @@
     "webRequest",
     "scripting",
     "storage",
+    "contextMenus",
     "offscreen",
     "activeTab",
     "declarativeNetRequestWithHostAccess"
@@ -48,6 +49,9 @@
     }
   ],
   "commands": {
+    "make": {
+      "description": "__MSG_cmdMake__"
+    },
     "toggle": {
       "suggested_key": {
         "default": "Alt+Shift+S"

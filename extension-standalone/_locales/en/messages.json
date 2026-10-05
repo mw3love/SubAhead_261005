@@ -20,6 +20,29 @@
   "cmdLater": {
     "message": "Subtitles 0.5s later"
   },
+  "cmdMake": {
+    "message": "Create subtitles (press twice to start)"
+  },
+  "ctxMake": {
+    "message": "Create subtitles for this video (SubAhead)"
+  },
+  "alreadyMaking": {
+    "message": "Already creating subtitles"
+  },
+  "confirmTitle": {
+    "message": "Press again to create subtitles"
+  },
+  "confirmText": {
+    "message": "$P1$ video(s) · about $P2$ credits",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      }
+    }
+  },
   "stageDownload": {
     "message": "Downloading video"
   },
@@ -77,6 +100,9 @@
   "errSTT_FAILED": {
     "message": "The transcription server returned an error. Please try again later."
   },
+  "errTIMEOUT": {
+    "message": "Transcription took too long, so it was stopped. Please try again in a moment."
+  },
   "errUNKNOWN": {
     "message": "An unknown error occurred."
   },
@@ -90,6 +116,25 @@
   },
   "jobLoaded": {
     "message": "Loaded saved subtitles."
+  },
+  "jobMadeMany": {
+    "message": "Created subtitles for $P1$ videos.",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "jobSomeFailed": {
+    "message": "$P1$ failed.",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "jobCancelled": {
+    "message": "Subtitle creation was canceled."
   },
   "jobAttached": {
     "message": "Applied saved subtitles."
@@ -283,6 +328,75 @@
   },
   "hasSubs": {
     "message": "Has subtitles"
+  },
+  "checkAll": {
+    "message": "Select all"
+  },
+  "uncheckAll": {
+    "message": "Clear all"
+  },
+  "toMake": {
+    "message": "To create"
+  },
+  "countN": {
+    "message": "$P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "toLoad": {
+    "message": "$P1$ saved",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "makeN": {
+    "message": "Create subtitles ($P1$)",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "pickNone": {
+    "message": "Select a video"
+  },
+  "retryFailed": {
+    "message": "Retry failed videos ($P1$)",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "nthOf": {
+    "message": "($P1$/$P2$)",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      }
+    }
+  },
+  "cancel": {
+    "message": "Cancel"
+  },
+  "cancelNote": {
+    "message": "Credits for audio already uploaded are not refunded."
+  },
+  "srtAria": {
+    "message": "Save $P1$ as a subtitle file (.srt)",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
   },
   "makingTitle": {
     "message": "Creating subtitles"

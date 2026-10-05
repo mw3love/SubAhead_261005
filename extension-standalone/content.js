@@ -93,7 +93,7 @@ function showToast(kind, title, text) {
     root.innerHTML = `<style>
       .t{font:13px/1.45 -apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;color:#fff;background:#1e293b;
          border-radius:10px;padding:10px 14px;box-shadow:0 6px 20px rgba(0,0,0,.35);max-width:280px;display:flex;gap:10px;align-items:flex-start}
-      .dot{width:8px;height:8px;border-radius:50%;margin-top:6px;flex:none;background:#facc15}
+      .dot{width:8px;height:8px;border-radius:50%;margin-top:6px;flex:none;background:#ff7f6e}
       .t.done .dot{background:#4ade80} .t.error .dot{background:#f87171} .t.info .dot{background:#93c5fd}
       .t.running .dot{animation:p 1s ease-in-out infinite} @keyframes p{50%{opacity:.3}}
       b{display:block;font-weight:600} span{opacity:.8} span:empty{display:none}
@@ -113,7 +113,10 @@ function showToast(kind, title, text) {
 }
 
 function showStatus(job) {
-  if (job.status === "running") showToast("running", t("toastTitle", STAGE_LABEL[job.stage] || t("stagePreparing")), job.detail);
+  // 영상 여러 개를 차례로 만들 때는 몇 번째인지 붙인다
+  const nth = job.total > 1 ? ` (${job.index + 1}/${job.total})` : "";
+  if (job.status === "running") showToast("running", t("toastTitle", (STAGE_LABEL[job.stage] || t("stagePreparing")) + nth), job.detail);
+  else if (job.status === "cancelled") showToast("info", t("toastTitle", t("jobCancelled")), "");
   else if (job.status === "done") showToast("done", t("toastTitle", t("toastDone")), job.message);
   else showToast("error", t("toastTitle", t("toastFailed")), job.message);
 }
@@ -239,6 +242,14 @@ document.addEventListener("play", (e) => {
 // 이 프레임이 페이지 맨 위에서 떨어진 거리. 팝업 영상 목록을 페이지 위→아래로 매길 때 background 가 읽는다.
 // 맨 바깥 페이지는 0, 안쪽 프레임은 바로 바깥 프레임이 postMessage 로 알려 준다(다른 사이트 프레임도 된다).
 let frameOffset = window === top ? { x: 0, y: 0 } : null;
+// 이 프레임 영상들의 페이지 기준 위치. background 가 메시지로 묻는다(프레임 위치를 모르면 null).
+function videoPositions() {
+  return [...document.querySelectorAll("video")].map((v) => {
+    if (!frameOffset) return null;
+    const r = v.getBoundingClientRect();
+    return { x: frameOffset.x + r.left + scrollX, y: frameOffset.y + r.top + scrollY };
+  });
+}
 function tellFrames() {
   if (!frameOffset) return;
   for (const f of document.querySelectorAll("iframe, frame")) {
@@ -265,13 +276,17 @@ function highlight(i, on, scroll) {
   const v = document.querySelectorAll("video")[i];
   if (!on || !v) return;
   lit = { video: v, outline: v.style.outline, offset: v.style.outlineOffset };
-  v.style.outline = "4px solid #facc15";
+  v.style.outline = "4px solid #ff7f6e";
   v.style.outlineOffset = "-4px";
   if (scroll) v.scrollIntoView({ block: "center", behavior: "smooth" });
   litTimer = setTimeout(() => highlight(0, false), 3000);
 }
 
-chrome.runtime.onMessage.addListener((msg) => {
+chrome.runtime.onMessage.addListener((msg, sender, reply) => {
+  if (msg.type === "tellFrames") tellFrames();
+  if (msg.type === "positions") reply(videoPositions());
+  // 단축키로 만들기: 한 번 더 누르면 시작한다는 안내
+  if (msg.type === "confirm") showToast("confirm", msg.title, msg.text);
   if (msg.type === "cues") attachCues(msg.cues, msg.url, msg.offset);
   if (msg.type === "status") showStatus(msg.job);
   if (msg.type === "command") command(msg.name);

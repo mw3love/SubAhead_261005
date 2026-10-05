@@ -12,6 +12,13 @@ export class AppError extends Error {
 }
 
 let ffmpeg;
+// 취소: 돌고 있는 ffmpeg 를 끝낸다(다음 작업 때 새로 불러온다)
+export function stopFFmpeg() {
+  if (!ffmpeg) return;
+  ffmpeg.terminate();
+  ffmpeg = null;
+}
+
 async function getFFmpeg() {
   if (ffmpeg) return ffmpeg;
   ffmpeg = new FFmpeg();
@@ -79,7 +86,8 @@ export async function extractAudio(blob, report) {
   report("extract", (blob.size / 1e6).toFixed(0) + " MB");
   const ff = await getFFmpeg();
   const onProgress = ({ progress }) => {
-    if (progress > 0 && progress <= 1) report("extract", Math.round(progress * 100) + "%");
+    // 취소되면 report 가 오류를 던진다. ffmpeg 는 따로 끝내므로 여기서는 무시한다.
+    if (progress > 0 && progress <= 1) try { report("extract", Math.round(progress * 100) + "%"); } catch {}
   };
   ff.on("progress", onProgress);
   await ff.mount("WORKERFS", { blobs: [{ name: "media", data: blob }] }, "/mnt");

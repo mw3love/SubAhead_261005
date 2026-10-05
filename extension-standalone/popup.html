@@ -5,7 +5,7 @@
   /* 항상 다크 */
   :root {
     --bg: #0f172a; --panel: #1e293b; --line: #1e293b; --line2: #334155;
-    --fg: #e2e8f0; --muted: #94a3b8; --accent: #facc15; --accent-fg: #0f172a;
+    --fg: #e2e8f0; --muted: #94a3b8; --accent: #ff7f6e; --accent-fg: #0f172a;
     --ok: #4ade80; --err: #f87171; --err-bg: #2a1215;
     color-scheme: dark;
   }
@@ -52,10 +52,16 @@
   @keyframes spin { to { transform: rotate(360deg); } }
   .error { background: var(--err-bg); border-color: transparent; color: var(--err); }
   .picker { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
-  button.pick { display: flex; justify-content: space-between; gap: 8px; text-align: left; padding: 8px 10px;
-                background: var(--panel); color: var(--fg); border: 1px solid var(--line2); font-weight: 500; }
-  button.pick[aria-checked="true"] { border-color: var(--accent); color: var(--accent); font-weight: 700; }
-  button.pick span:last-child { color: var(--muted); font-weight: 400; }
+  label.pick { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border: 1px solid var(--line2);
+               border-radius: 8px; background: var(--panel); cursor: pointer; }
+  label.pick input { width: 16px; height: 16px; margin: 0; flex: none; accent-color: var(--accent); }
+  label.pick .name { flex: 1; font-weight: 600; }
+  label.pick .name small { color: var(--accent); font-weight: 500; }
+  label.pick .meta { color: var(--muted); font-size: 12px; }
+  label.pick:has(input:not(:checked)) { opacity: .5; }
+  .result { margin-bottom: 14px; padding-bottom: 12px; border-bottom: 1px solid var(--line2); }
+  .result button { margin-top: 6px; }
+  .note { margin: 6px 0 0; font-size: 11px; }
   details { margin-top: 8px; color: var(--muted); font-size: 11px; word-break: break-all; }
 
   /* 자막 모양 */
@@ -71,8 +77,10 @@
   .grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
   .opts { display: flex; gap: 8px; }
   .opts button { width: 32px; height: 32px; padding: 0; border: 1px solid var(--line2); }
-  .opts button[aria-pressed="true"] { border: 3px solid var(--accent); }
-  .swatch { border-radius: 50%; }
+  /* 선택 표시: 버튼에서 띄운 코랄 고리 + 색 동그라미에는 ✓ (고른 색과 같은 색이어도 보이도록) */
+  .opts button[aria-pressed="true"] { box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent); }
+  .swatch { border-radius: 50%; display: grid; place-items: center; }
+  .swatch[aria-pressed="true"]::after { content: "✓"; color: #0f172a; font-size: 16px; font-weight: 800; }
   .tile { border-radius: 6px; font-size: 11px; color: #fff; font-weight: 600; }
   .tile.none { background: transparent; border-style: dashed; border-color: #64748b; }
   .tile.none[aria-pressed="true"] { border-style: dashed; }
@@ -89,6 +97,7 @@
   #keymsg.ok { color: var(--ok); } #keymsg.err { color: var(--err); }
   .listhead { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px; }
   .listhead h3 { margin: 0; }
+  .listhead + .picker { margin-top: 8px; }
   .listhead span { font-size: 11px; color: var(--muted); }
   ul.list { list-style: none; margin: 0; padding: 0; max-height: 200px; overflow: auto; }
   ul.list li { display: flex; align-items: center; gap: 8px; padding: 8px 0; border-bottom: 1px solid var(--line); }

@@ -1,5 +1,5 @@
-// 팝업(항상 다크). [자막] 탭: 상태(키 입력·준비·진행 중·완료·오류) + 자막 미리보기·크기·색·배경.
-// [설정] 탭: API 게이트웨이 · 저장된 자막 · Alt+휠 · 단축키. 따로 있던 설정 페이지를 여기에 합쳤다.
+// 팝업(항상 다크). [자막] 탭: 상태(키 입력·준비·진행 중·완료·오류), 영상이 여러 개면 체크 목록.
+// [모양] 탭: 미리보기·크기·색·배경. [설정] 탭: API 게이트웨이 · 저장된 자막(.srt 내려받기) · Alt+휠 · 단축키.
 // 화면 글자는 _locales 의 문구를 쓴다(브라우저 언어에 따라 한국어/영어).
 const t = (key, ...subs) => chrome.i18n.getMessage(key, subs.map(String));
 const $ = (id) => document.getElementById(id);
@@ -10,7 +10,8 @@ const STEPS = [
   ["transcribe", t("stepTranscribe")],
 ];
 const main = $("main");
-let tabId, info, chosen = null, style = MiriStyle.normalize(); // chosen: 영상 목록에서 고른 영상 주소
+let tabId, info, style = MiriStyle.normalize();
+const unchecked = new Set(); // 영상이 여러 개일 때 체크를 뺀 영상 주소(기본은 모두 체크)
 
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 const lang = chrome.i18n.getUILanguage();
@@ -64,7 +65,8 @@ function renderKey(error) {
   input.onkeydown = (e) => { if (e.key === "Enter") save(); };
 }
 
-function renderReady() {
+// 영상이 하나일 때(또는 고를 영상 목록이 없을 때)의 화면들. note: 맨 위에 붙일 한 줄(예: 취소했어요)
+function renderReady(note) {
   if (!info.url) {
     main.innerHTML = `
       <h2>${t("noVideoTitle")}</h2>
@@ -77,14 +79,15 @@ function renderReady() {
     main.innerHTML = `<h2>${t("liveTitle")}</h2><p>${t("liveDesc")}</p>`;
     return;
   }
+  const top = note ? `<p>${esc(note)}</p>` : "";
   if (info.cached) {
-    main.innerHTML = `
+    main.innerHTML = `${top}
       <div class="card"><div class="row"><span>${t("savedSubs")}</span><span>${t("available")}</span></div>
       <div class="row"><span>${t("cost")}</span><span>${t("free")}</span></div></div>
       <button id="go">${t("loadSubs")}</button>`;
   } else {
     const short = info.estimate != null && info.remaining != null && info.estimate > info.remaining;
-    main.innerHTML = `
+    main.innerHTML = `${top}
       <div class="card">
         <div class="row"><span>${t("videoLength")}</span><span>${info.duration ? fmtDur(info.duration) : t("unknown")}</span></div>
         ${info.estimate != null ? `<div class="row"><span>${t("estCost")}</span><span>${t("aboutCredits", fmtNum(info.estimate))}</span></div>` : ""}
@@ -92,20 +95,28 @@ function renderReady() {
       </div>
       <button id="go" ${short ? "disabled" : ""}>${t("makeAll")}</button>`;
   }
-  $("go").onclick = () => chrome.runtime.sendMessage({ type: "start", tabId, src: info.url });
+  $("go").onclick = () => chrome.runtime.sendMessage({ type: "start", tabId, srcs: [info.url] });
 }
 
 function renderRunning(job) {
   const now = STEPS.findIndex(([k]) => k === job.stage);
   const secs = job.startedAt ? Math.round((Date.now() - job.startedAt) / 1000) : 0;
+  // 영상 여러 개를 차례로 만들 때는 몇 번째인지
+  const nth = job.total > 1 ? " " + t("nthOf", job.index + 1, job.total) : "";
   main.innerHTML = `
-    <h2>${t("makingTitle")}</h2>
+    <h2>${t("makingTitle")}${nth}</h2>
     <ul class="steps">${STEPS.map(([k, label], i) => {
       const cls = i < now ? "done" : i === now ? "now" : "";
       const detail = i === now && job.detail ? `<small>${esc(job.detail)}</small>` : "";
       return `<li class="${cls}"><i>${i < now ? "✓" : ""}</i>${label}${detail}</li>`;
     }).join("")}</ul>
-    <p style="margin:0">${t("elapsed", secs)}</p>`;
+    <p>${t("elapsed", secs)}</p>
+    <button class="sub" id="cancel">${t("cancel")}</button>
+    <p class="note">${t("cancelNote")}</p>`;
+  $("cancel").onclick = () => {
+    $("cancel").disabled = true;
+    chrome.runtime.sendMessage({ type: "cancel", tabId });
+  };
 }
 
 function renderDone(job) {
@@ -118,7 +129,7 @@ function renderDone(job) {
       <button class="sub" id="remake">${remakeLabel}</button>
     </div>`;
   $("toggle").onclick = () => chrome.tabs.sendMessage(tabId, { type: "command", name: "toggle" }).catch(() => {});
-  $("remake").onclick = () => chrome.runtime.sendMessage({ type: "remake", tabId, src: info.url });
+  $("remake").onclick = () => chrome.runtime.sendMessage({ type: "remake", tabId, srcs: [info.url] });
 }
 
 function renderError(job) {
@@ -129,7 +140,7 @@ function renderError(job) {
     <div class="card error" role="alert">${esc(job.message)}
       ${job.detail ? `<details><summary>${t("details")}</summary>${esc(job.detail)}</details>` : ""}</div>
     ${buttons}`;
-  if ($("retry")) $("retry").onclick = () => chrome.runtime.sendMessage({ type: "start", tabId, src: info.url });
+  if ($("retry")) $("retry").onclick = () => chrome.runtime.sendMessage({ type: "start", tabId, srcs: [job.url || info.url] });
   if ($("rekey")) $("rekey").onclick = () => renderKey();
 }
 
@@ -138,41 +149,86 @@ function render() {
   credits.hidden = info.remaining == null;
   if (info.remaining != null) credits.textContent = t("remaining", fmtNum(info.remaining));
   const job = info.job;
-  // 다른 영상으로 옮겨 간 뒤의 지난 결과는 보여 주지 않는다(진행 중은 항상 보여 줌).
-  const sameVideo = job && (!job.url || !info.url || job.url === info.url);
   if (!info.hasKey && !(job && job.status === "running")) return renderKey();
   if (job && job.status === "running") return renderRunning(job);
+  if (info.videos) return renderMulti(job);
+  // 다른 영상으로 옮겨 간 뒤의 지난 결과는 보여 주지 않는다(진행 중은 항상 보여 줌).
+  const sameVideo = job && (!job.url || !info.url || job.url === info.url);
   if (job && sameVideo && job.status === "error") renderError(job);
   else if (job && sameVideo && job.status === "done") renderDone(job);
-  else renderReady();
-  renderPicker();
+  else renderReady(job && sameVideo && job.status === "cancelled" ? t("jobCancelled") : "");
 }
 
-// ---------- [자막] 탭: 영상이 여러 개일 때 고르기 ----------
-// 마우스를 올리거나 키보드로 옮기면 페이지의 그 영상에 테두리를 치고, 고르면 그 영상 기준으로 다시 그린다.
-function renderPicker() {
-  if (!info.videos) return;
-  main.insertAdjacentHTML("afterbegin", `
-    <h3 id="picklbl">${t("pickVideo")}</h3>
-    <div class="picker" role="radiogroup" aria-labelledby="picklbl">${info.videos.map((v, n) => `
-      <button class="pick" role="radio" aria-checked="${v.src === info.url}" data-n="${n}">
-        <span>${t("videoN", n + 1)}${v.src === info.played ? " · " + t("lastPlayed") : ""}</span>
-        <span>${[v.duration ? fmtTime(v.duration) : "", v.cached ? t("hasSubs") : ""].filter(Boolean).join(" · ")}</span>
-      </button>`).join("")}
-    </div>`);
+// ---------- [자막] 탭: 영상이 여러 개일 때 ----------
+// 지난 결과(있으면) + 영상 체크 목록(기본 모두 체크, 빼고 싶은 것만 끈다) + 합계 + 만들기 버튼.
+// 목록에 마우스를 올리거나 키보드로 옮기면 페이지의 그 영상에 테두리를 친다.
+function renderMulti(job) {
+  const vids = info.videos;
+  const mine = job && job.urls && job.urls.some((u) => vids.some((v) => v.src === u));
+  const failed = mine && job.failed && job.failed.length ? job.failed.map((f) => f.url) : [];
+  let head = "";
+  if (mine && job.status === "done")
+    head = `<div class="status"><span class="dot"></span>${esc(job.message)}</div>
+      <p>${job.credits ? t("creditsUsed", fmtNum(job.credits)) + " " : ""}${t("seekAnywhere")}</p>`;
+  if (mine && job.status === "error")
+    head = `<div class="card error" role="alert">${esc(job.message)}
+      ${job.detail ? `<details><summary>${t("details")}</summary>${esc(job.detail)}</details>` : ""}</div>`;
+  if (mine && job.status === "cancelled") head = `<p>${t("jobCancelled")}</p>`;
+  if (failed.length) head += `<button class="sub" id="retryfailed">${t("retryFailed", failed.length)}</button>`;
+  if (mine && job.status === "error" && job.action === "key") head += `<button class="sub" id="rekey">${t("rekey")}</button>`;
+  if (head) head = `<div class="result">${head}</div>`;
+
+  const chosen = vids.filter((v) => !unchecked.has(v.src));
+  const todo = chosen.filter((v) => !v.cached);
+  const known = todo.every((v) => v.estimate != null);
+  const cost = todo.reduce((sum, v) => sum + (v.estimate || 0), 0);
+  const short = known && info.remaining != null && cost > info.remaining;
+  const allOn = chosen.length === vids.length;
+  const go = !chosen.length ? t("pickNone") : todo.length ? t("makeN", todo.length) : t("loadSubs");
+  main.innerHTML = `${head}
+    <div class="listhead"><h3 id="picklbl">${t("pickVideo")}</h3>
+      <button class="link" id="checkall">${allOn ? t("uncheckAll") : t("checkAll")}</button></div>
+    <div class="picker" role="group" aria-labelledby="picklbl">${vids.map((v, n) => `
+      <label class="pick" data-n="${n}">
+        <input type="checkbox" ${unchecked.has(v.src) ? "" : "checked"}>
+        <span class="name">${t("videoN", n + 1)}${v.src === info.played ? ` <small>· ${t("lastPlayed")}</small>` : ""}</span>
+        <span class="meta">${[v.duration ? fmtTime(v.duration) : "", v.cached ? t("hasSubs") : ""].filter(Boolean).join(" · ")}</span>
+      </label>`).join("")}
+    </div>
+    <div class="card">
+      <div class="row"><span>${t("toMake")}</span><span>${t("countN", todo.length)}${chosen.length > todo.length ? " · " + t("toLoad", chosen.length - todo.length) : ""}</span></div>
+      ${todo.length ? (known && info.remaining != null ? `<div class="row"><span>${t("estCost")}</span><span>${t("aboutCredits", fmtNum(cost))}</span></div>` : "")
+        : chosen.length ? `<div class="row"><span>${t("cost")}</span><span>${t("free")}</span></div>` : ""}
+      ${short ? `<div class="warn">${t("notEnough")}</div>` : ""}
+    </div>
+    <div class="pair">
+      ${mine && job.status === "done" ? `<button class="sub" id="toggle">${t("toggleSubs")}</button>` : ""}
+      <button id="go" ${!chosen.length || short ? "disabled" : ""}>${go}</button>
+    </div>`;
+
   const light = (v, on, scroll) =>
     chrome.tabs.sendMessage(tabId, { type: "highlight", i: v.i, on, scroll }, { frameId: v.frameId }).catch(() => {});
-  for (const btn of main.querySelectorAll(".pick")) {
-    const v = info.videos[+btn.dataset.n];
-    btn.onmouseenter = btn.onfocus = () => light(v, true);
-    btn.onmouseleave = btn.onblur = () => light(v, false);
-    btn.onclick = () => {
+  for (const row of main.querySelectorAll(".pick")) {
+    const v = vids[+row.dataset.n];
+    const box = row.querySelector("input");
+    row.onmouseenter = box.onfocus = () => light(v, true);
+    row.onmouseleave = box.onblur = () => light(v, false);
+    box.onchange = () => {
+      if (box.checked) unchecked.delete(v.src);
+      else unchecked.add(v.src);
       light(v, true, true);
-      if (v.src === info.url) return;
-      chosen = v.src;
-      load();
+      renderMulti(job);
     };
   }
+  $("checkall").onclick = () => {
+    if (allOn) for (const v of vids) unchecked.add(v.src);
+    else unchecked.clear();
+    renderMulti(job);
+  };
+  $("go").onclick = () => chrome.runtime.sendMessage({ type: "start", tabId, srcs: chosen.map((v) => v.src) });
+  if ($("toggle")) $("toggle").onclick = () => chrome.tabs.sendMessage(tabId, { type: "command", name: "toggle" }).catch(() => {});
+  if ($("retryfailed")) $("retryfailed").onclick = () => chrome.runtime.sendMessage({ type: "start", tabId, srcs: failed });
+  if ($("rekey")) $("rekey").onclick = () => renderKey();
 }
 
 // ---------- [자막] 탭: 모양(미리보기·크기·색·배경) ----------
@@ -217,6 +273,7 @@ async function renderSaved() {
     $("saved").innerHTML = `<li class="empty">${t("savedEmpty")}</li>`;
     return;
   }
+  const down = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>`;
   const trash = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg>`;
   $("saved").innerHTML = items.map((it, i) => {
     let title = it.meta.title;
@@ -228,12 +285,32 @@ async function renderSaved() {
     if (it.sync) parts.push(t("syncShort", (it.sync > 0 ? "+" : "−") + Math.abs(it.sync).toFixed(1)));
     return `<li><div class="info"><div class="title" title="${esc(it.url)}">${esc(title)}</div>
       <div class="meta">${esc(parts.join(" · "))}</div></div>
+      <button class="del" data-srt="${i}" title="${esc(t("srtAria", title))}" aria-label="${esc(t("srtAria", title))}">${down}</button>
       <button class="del" data-i="${i}" aria-label="${esc(t("deleteAria", title))}">${trash}</button></li>`;
   }).join("");
   for (const btn of $("saved").querySelectorAll("button[data-i]")) {
     const url = items[+btn.dataset.i].url;
     btn.onclick = () => chrome.storage.local.remove(["cues:" + url, "meta:" + url, "sync:" + url]);
   }
+  for (const btn of $("saved").querySelectorAll("button[data-srt]")) {
+    const it = items[+btn.dataset.srt];
+    btn.onclick = () => downloadSrt(it.meta.title || "subtitles", all["cues:" + it.url] || [], it.sync);
+  }
+}
+
+// 자막 파일(.srt)로 내려받기. 영상별로 맞춘 싱크를 반영하고, 윈도우 플레이어가 한글을 알아보도록 BOM 을 붙인다.
+function srtTime(sec) {
+  const ms = Math.round(Math.max(0, sec) * 1000);
+  const p = (n, w = 2) => String(n).padStart(w, "0");
+  return `${p(Math.floor(ms / 3600000))}:${p(Math.floor(ms / 60000) % 60)}:${p(Math.floor(ms / 1000) % 60)},${p(ms % 1000, 3)}`;
+}
+function downloadSrt(title, cues, sync) {
+  const text = cues.map((c, n) => `${n + 1}\n${srtTime(c.start + sync)} --> ${srtTime(c.end + sync)}\n${c.text}\n`).join("\n");
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob(["\ufeff" + text], { type: "application/x-subrip" }));
+  a.download = (title.replace(/[\\/:*?"<>|]+/g, "_").trim().slice(0, 80) || "subtitles") + ".srt";
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 10000);
 }
 
 // 모두 지우기: 실수 방지로 두 번 눌러야 지워진다(4초 안에 다시 누르기)
@@ -267,7 +344,7 @@ async function saveConn() {
 
 // ---------- 시작 ----------
 async function load() {
-  info = await chrome.runtime.sendMessage({ type: "info", tabId, src: chosen });
+  info = await chrome.runtime.sendMessage({ type: "info", tabId });
   render();
   renderConn();
 }
@@ -303,9 +380,9 @@ async function load() {
     const c = ch["job:" + tabId];
     if (!c) return;
     info.job = c.newValue;
-    // 다 만들었으면 영상 목록의 "자막 있음"도 맞도록 정보를 다시 받는다
-    if (info.videos && info.job && info.job.status === "done") load();
-    else render();
+    render();
+    // 다 만들었으면(또는 멈췄으면) 영상 목록의 "자막 있음"도 맞도록 정보를 다시 받는다
+    if (info.videos && info.job && info.job.status !== "running") load();
   });
   chrome.storage.onChanged.addListener((ch, area) => {
     if (area !== "local") return;
