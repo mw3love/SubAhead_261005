@@ -9,10 +9,11 @@
 ## 기능
 
 - 페이지 안의 HTML5 영상(일반 영상 파일, HLS 스트림)을 자동으로 찾아요.
+- 한 페이지에 영상이 여러 개면 팝업에 목록(페이지 위→아래 순서)이 나와 자막을 만들 영상을 고를 수 있어요. 기본은 마지막으로 재생한 영상이고, 목록에 마우스를 올리면 그 영상에 테두리가 표시돼요.
 - 영상에서 **소리만** 뽑아(확장 안의 ffmpeg.wasm) 음성인식 서버로 보내요. 화면 데이터는 보내지 않아요.
 - 만들기 전에 영상 길이·예상 비용·남은 크레딧을 보여 주고, 진행 상황을 단계별로 보여 줘요.
 - 브라우저 기본 자막으로 표시해서 전체화면에서도 보여요.
-- 팝업의 미리보기를 보며 크기(0~100)·색(흰색·노랑)·배경(없음·반투명·진하게)을 바꾸면 영상 자막이 바로 바뀌어요.
+- 팝업의 **모양** 탭에서 미리보기를 보며 크기(0~100)·색(흰색·노랑)·배경(없음·반투명·진하게)을 바꾸면 영상 자막이 바로 바뀌어요.
 - 한 번 만든 자막은 브라우저에 저장돼서, 같은 영상을 다시 열면 크레딧 없이 바로 붙어요.
 - 단축키와 Alt(Mac 은 Option) 조작:
 
@@ -69,7 +70,8 @@
 **SubAhead** is a Chrome extension that transcribes the audio of an HTML5 video on a web page **ahead of time**, so Korean subtitles stay in sync wherever you seek.
 
 - Finds HTML5 videos (files and HLS), extracts audio only (ffmpeg.wasm), and sends it to your speech recognition gateway.
-- Live preview to adjust size, color and background; subtitles are saved and re-applied automatically.
+- On pages with several videos, pick which one to subtitle from a list in the popup (defaults to the last played).
+- Live preview in the Style tab to adjust size, color and background; subtitles are saved and re-applied automatically.
 - Shortcuts: `Alt+Shift+S` toggle, `Alt+Shift+↑` size, `Alt+Shift+←/→` sync ±0.5s, `Alt+wheel` resize, `Alt+drag` move.
 - **Requires** the Base URL and API key of an API gateway that provides the `stt-async-v5` speech recognition model.
 - Install: `chrome://extensions` → Developer mode → Load unpacked → `extension-standalone`.
