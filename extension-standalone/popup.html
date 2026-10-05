@@ -49,6 +49,8 @@
   .steps li.now { color: var(--fg); font-weight: 600; }
   .steps li.now i { border-color: var(--accent); border-top-color: transparent; animation: spin .9s linear infinite; }
   .steps li small { margin-left: auto; font-weight: 400; color: var(--muted); }
+  .steps.items li.now small { color: var(--fg); }
+  .steps li.fail { color: var(--fg); } .steps li.fail i { border-color: var(--err); color: var(--err); }
   @keyframes spin { to { transform: rotate(360deg); } }
   .error { background: var(--err-bg); border-color: transparent; color: var(--err); }
   .picker { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }

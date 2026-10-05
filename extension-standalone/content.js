@@ -8,6 +8,7 @@ const STAGE_LABEL = {
   extract: t("stageExtract"),
   upload: t("stageUpload"),
   transcribe: t("stageTranscribe"),
+  queued: t("stageQueued"),
 };
 const TRACK_LABEL = t("trackLabel");
 const SYNC_STEP = 0.5;

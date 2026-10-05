@@ -58,6 +58,12 @@
   "stagePreparing": {
     "message": "Preparing"
   },
+  "stageWaiting": {
+    "message": "Waiting"
+  },
+  "stageQueued": {
+    "message": "Waiting to transcribe"
+  },
   "stepDownload": {
     "message": "Download video"
   },

@@ -41,8 +41,12 @@ chrome.tabs.onUpdated.addListener(async (tabId, change) => {
   chrome.action.setBadgeText({ tabId, text: "" }).catch(() => {});
 });
 
+// 늦는 답은 ms 까지만 기다리고 null(실패도 null)
+const within = (ms, p) => Promise.race([p.catch(() => null), new Promise((res) => setTimeout(() => res(null), ms))]);
+
 async function findVideos(tabId, withPositions) {
-  const results = await chrome.scripting.executeScript({
+  // 바쁜 페이지는 답이 늦다. 3초 넘게 기다리지 않는다(팝업·만들기가 멈추지 않게). 위치 묻기는 따로 1초씩.
+  const results = (await within(3000, chrome.scripting.executeScript({
     target: { tabId, allFrames: true },
     func: () =>
       [...document.querySelectorAll("video")].map((v, i) => ({
@@ -52,7 +56,7 @@ async function findVideos(tabId, withPositions) {
         duration: v.duration,
         page: location.href, // 영상이 있는 프레임 주소(받을 때 Referer 로 쓴다)
       })),
-  });
+  }))) || [];
   // frameId: 영상이 있는 프레임. 만든 자막을 그 프레임에만 보낼 때 쓴다.
   const videos = results.flatMap((r) => (r.result || []).map((v) => ({ ...v, frameId: r.frameId, x: null, y: null })));
   if (withPositions) await addPositions(tabId, videos);
@@ -63,7 +67,6 @@ async function findVideos(tabId, withPositions) {
 // 영상마다 페이지 맨 위 기준 위치(x, y)를 붙인다. 맨 바깥 페이지가 안쪽 프레임에 위치를 알리게 하고(content.js),
 // 잠깐 기다린 뒤 프레임마다 메시지로 묻는다. content.js 가 없는 프레임(확장을 새로 올리기 전에 연 탭 등)은 null.
 // 순서는 있으면 좋은 정보라, 답이 늦는 프레임은 1초까지만 기다린다(팝업이 멈추지 않게).
-const within = (ms, p) => Promise.race([p.catch(() => null), new Promise((res) => setTimeout(() => res(null), ms))]);
 async function addPositions(tabId, videos) {
   await within(1000, chrome.tabs.sendMessage(tabId, { type: "tellFrames" }, { frameId: 0 }));
   await new Promise((res) => setTimeout(res, 150));
@@ -214,8 +217,7 @@ async function info(tabId) {
   const { baseUrl } = await chrome.storage.local.get("baseUrl");
   const job = await getJob(tabId);
   if (!server) return { hasKey: false, job, baseUrl: baseUrl || "" };
-  // chrome:// 같은 페이지는 스크립트를 넣을 수 없고, 바쁜 페이지는 답이 늦다. 3초 넘게 기다리지 않는다(팝업이 멈추지 않게).
-  const videos = (await within(3000, findVideos(tabId, true))) || [];
+  const videos = await findVideos(tabId, true); // chrome:// 같은 페이지는 빈 목록
   const url = await pickSource(tabId, videos);
   const picked = videos.find((v) => v.src === url) || videos[0];
   const live = !!picked && picked.duration === Infinity;
@@ -320,15 +322,13 @@ async function remake(tabId, srcs) {
   return start(tabId, items.map((it) => it.url));
 }
 
-// ---------- 자막 만들기(영상 여러 개는 차례로) ----------
-// job:<tabId> 하나가 만들 영상 목록(queue)을 들고 index 번째를 만든다. 서비스 워커가 쉬었다 깨어나도 이어지도록 저장해 둔다.
+// ---------- 자막 만들기 ----------
+// job:<tabId> 하나가 만들 영상 목록(items, 영상마다 단계 stage)을 든다. 서비스 워커가 쉬었다 깨어나도 이어지도록 저장해 둔다.
+// 실제 처리는 offscreen 이 두 줄로 겹쳐 한다(내 PC: 받기·소리 뽑기 / 게이트웨이: 올리기·받아 적기).
 
 // 만들 영상 목록: srcs(팝업 체크·오른쪽 클릭·단축키)를 주면 그 영상들, 없으면 전처럼 하나를 고른다.
 async function plan(tabId, srcs) {
-  let videos = [];
-  try {
-    videos = await findVideos(tabId);
-  } catch {}
+  const videos = await findVideos(tabId); // 페이지가 답하지 않으면 빈 목록(프레임을 모르니 자막은 모든 프레임에 보낸다)
   const urls = srcs && srcs.length ? srcs : [await pickSource(tabId, videos)].filter(Boolean);
   return urls.map((url) => {
     const v = videos.find((x) => x.src === url);
@@ -344,7 +344,7 @@ async function start(tabId, srcs) {
   const items = await plan(tabId, srcs);
   if (!items.length) return fail(tabId, null, "NO_VIDEO");
   if (items.length === 1 && items[0].live) return fail(tabId, items[0].url, "LIVE");
-  // 이미 만든 자막은 바로 붙이고(크레딧 없음), 나머지만 차례로 만든다. 생방송은 건너뛴다.
+  // 이미 만든 자막은 바로 붙이고(크레딧 없음), 나머지만 만든다. 생방송은 건너뛴다.
   const saved = await chrome.storage.local.get(items.map((it) => "cues:" + it.url));
   const todo = [];
   for (const it of items) {
@@ -354,25 +354,41 @@ async function start(tabId, srcs) {
   }
   const urls = items.map((it) => it.url);
   if (!todo.length) return setJob(tabId, { status: "done", message: t("jobLoaded"), url: items[0].url, urls, frameId: items[0].frameId });
-  const job = { id: crypto.randomUUID(), queue: todo, index: 0, total: todo.length, made: 0, lines: 0, credits: 0, failed: [], urls, startedAt: Date.now() };
-  await withJob(tabId, () => runItem(tabId, job, server));
-}
-
-async function runItem(tabId, job, server) {
-  const it = job.queue[job.index];
-  Object.assign(job, { status: "running", stage: "download", detail: "", url: it.url, frameId: it.frameId });
-  await setJob(tabId, job);
+  // 영상 페이지 주소를 모르면 탭 주소를 Referer 로 쓴다
   const tab = await chrome.tabs.get(tabId).catch(() => null);
-  await setReferer(it.page || (tab && tab.url), server.baseUrl);
+  for (const it of todo) it.page = it.page || (tab && tab.url) || null;
+  const first = todo[0];
+  const job = {
+    id: crypto.randomUUID(), status: "running", startedAt: Date.now(), urls, total: todo.length,
+    items: todo.map((it) => ({ url: it.url, frameId: it.frameId, stage: "wait", detail: "" })),
+    made: 0, lines: 0, credits: 0, failed: [],
+    // 영상 위 알림·배지가 따라가는 "지금" 영상(가장 최근에 진행 소식이 온 영상)
+    index: 0, url: first.url, frameId: first.frameId, stage: "download", detail: "",
+  };
+  await withJob(tabId, () => setJob(tabId, job));
   await ensureOffscreen();
-  chrome.runtime.sendMessage({ target: "offscreen", type: "transcribe", jobId: job.id, tabId, frameId: it.frameId, url: it.url, ...server });
+  chrome.runtime.sendMessage({
+    target: "offscreen", type: "transcribe", jobId: job.id, tabId,
+    items: todo.map(({ url, frameId, page }) => ({ url, frameId, page })), ...server,
+  });
 }
 
-// 한 영상이 끝나면(성공·실패) 다음 영상으로. 다 끝나면 결과를 정리한다.
-async function next(tabId, job) {
-  job.index++;
-  const server = job.index < job.total ? await getServer() : null;
-  if (server) return runItem(tabId, job, server);
+// 영상 하나가 끝나면 그 영상 위에 결과 알림을 띄우고(진행 알림이 남아 있지 않게), 모두 끝났으면 결과를 정리한다.
+function itemStatus(tabId, item, job) {
+  chrome.tabs.sendMessage(tabId, { type: "status", job }, item.frameId == null ? undefined : { frameId: item.frameId }).catch(() => {});
+}
+async function finishIfDone(tabId, job) {
+  const open = (it) => it.stage !== "done" && it.stage !== "failed";
+  if (job.items.some(open)) {
+    // 끝난 영상이 "지금" 영상이면 아직 진행 중인 영상으로 옮긴다(끝난 영상 위에 진행 알림이 다시 뜨지 않게)
+    if (!open(job.items[job.index])) {
+      const k = job.items.findIndex((it) => open(it) && it.stage !== "wait");
+      const index = k >= 0 ? k : job.items.findIndex(open);
+      const it = job.items[index];
+      Object.assign(job, { index, url: it.url, frameId: it.frameId, stage: it.stage === "wait" ? "download" : it.stage, detail: it.detail });
+    }
+    return setJob(tabId, job);
+  }
   setReferer(null);
   const summary = { urls: job.urls, total: job.total, failed: job.failed, frameId: job.frameId };
   const nFail = job.failed.length;
@@ -410,19 +426,35 @@ chrome.runtime.onMessage.addListener((msg, sender, reply) => {
   // 영상이 여러 개일 때 목록에 "방금 재생"으로 표시할 영상
   if (msg.type === "played" && sender.tab) chrome.storage.session.set({ ["played:" + sender.tab.id]: msg.src });
   if (msg.type === "autoAttach" && sender.tab) autoAttach(sender.tab.id, sender.frameId, msg.video);
-  // offscreen 에서 오는 진행·실패·결과. 취소됐거나 지난 작업(jobId 가 다름)의 것은 버린다.
-  const mine = (job) => job && job.id === msg.jobId && job.status === "running";
+  // offscreen 이 영상을 받기 직전에 묻는다: Referer 규칙을 그 영상의 페이지로 바꾼 뒤 답한다
+  if (msg.type === "referer") {
+    getServer().then((server) => setReferer(msg.page, server && server.baseUrl)).then(() => reply(true), () => reply(false));
+    return true;
+  }
+  // offscreen 에서 오는 진행·실패·결과(영상 번호 index). 취소됐거나 지난 작업(jobId 가 다름)의 것은 버린다.
+  const mine = (job) => job && job.id === msg.jobId && job.status === "running" && job.items && job.items[msg.index];
   if (msg.type === "progress")
-    withJob(msg.tabId, (job) => mine(job) && setJob(msg.tabId, { ...job, stage: msg.stage, detail: msg.detail }));
+    withJob(msg.tabId, (job) => {
+      if (!mine(job)) return;
+      const item = job.items[msg.index];
+      Object.assign(item, { stage: msg.stage, detail: msg.detail });
+      Object.assign(job, { index: msg.index, url: item.url, frameId: item.frameId, stage: msg.stage, detail: msg.detail });
+      return setJob(msg.tabId, job);
+    });
   if (msg.type === "failed")
     withJob(msg.tabId, async (job) => {
       if (!mine(job)) return;
       if (STOP_ALL.includes(msg.code)) {
+        // 남은 영상도 똑같이 실패하므로 모두 멈춘다
+        chrome.runtime.sendMessage({ target: "offscreen", type: "cancel", jobId: job.id }).catch(() => {});
         setReferer(null);
         return fail(msg.tabId, msg.url, msg.code, msg.detail, { urls: job.urls, frameId: job.frameId });
       }
+      const item = job.items[msg.index];
+      item.stage = "failed";
       job.failed.push({ url: msg.url, code: msg.code, detail: msg.detail });
-      return next(msg.tabId, job);
+      if (job.total > 1) itemStatus(msg.tabId, item, { status: "error", message: t("err" + (msg.code in ERROR_ACTION ? msg.code : "UNKNOWN")) });
+      return finishIfDone(msg.tabId, job);
     });
   if (msg.type === "result")
     withJob(msg.tabId, async (job) => {
@@ -439,10 +471,13 @@ chrome.runtime.onMessage.addListener((msg, sender, reply) => {
       };
       await chrome.storage.local.set({ ["cues:" + msg.url]: cues, ["meta:" + msg.url]: meta });
       await sendCues(msg.tabId, msg.url, cues, msg.frameId).catch(() => {});
+      const item = job.items[msg.index];
+      item.stage = "done";
       job.made++;
       job.lines += cues.length;
       job.credits += msg.credits || 0;
-      return next(msg.tabId, job);
+      if (job.total > 1) itemStatus(msg.tabId, item, { status: "done", message: t("jobMade", cues.length) });
+      return finishIfDone(msg.tabId, job);
     });
 });
 
@@ -471,10 +506,7 @@ async function makeByShortcut(tabId) {
   if (!(await getServer())) return fail(tabId, null, "NO_KEY");
   const job = await getJob(tabId);
   if (job && job.status === "running") return tellFrame(tabId, job.frameId, t("alreadyMaking"));
-  let videos = [];
-  try {
-    videos = await findVideos(tabId, true);
-  } catch {}
+  const videos = await findVideos(tabId, true);
   const list = choices(videos);
   const srcs = list.length > 1 ? list.map((v) => v.src) : [await pickSource(tabId, videos)].filter(Boolean);
   if (!srcs.length) return fail(tabId, null, "NO_VIDEO");

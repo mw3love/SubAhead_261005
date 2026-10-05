@@ -9,7 +9,7 @@
 ## 기능
 
 - 페이지 안의 HTML5 영상(일반 영상 파일, HLS 스트림)을 자동으로 찾아요.
-- 한 페이지에 영상이 여러 개면 팝업에 체크 목록(페이지 위→아래 순서)이 나와요. 처음엔 모두 체크돼 있고, 빼고 싶은 영상만 끄면 나머지를 차례로 만들어요. 목록에 마우스를 올리면 그 영상에 테두리가 표시돼요.
+- 한 페이지에 영상이 여러 개면 팝업에 체크 목록(페이지 위→아래 순서)이 나와요. 처음엔 모두 체크돼 있고, 빼고 싶은 영상만 끄면 나머지를 만들어요. 앞 영상이 게이트웨이에서 받아 적히는 동안 다음 영상의 소리를 미리 뽑아 둬서, 하나씩 할 때보다 빨라요. 목록에 마우스를 올리면 그 영상에 테두리가 표시돼요.
 - 영상 위를 오른쪽 클릭해 **이 영상 자막 만들기**로 그 영상만 만들 수도 있어요.
 - 영상에서 **소리만** 뽑아(확장 안의 ffmpeg.wasm) 음성인식 서버로 보내요. 화면 데이터는 보내지 않아요.
 - 만들기 전에 영상 길이·예상 비용·남은 크레딧을 보여 주고, 진행 상황을 단계별로 보여 줘요. 진행 중에 취소할 수 있고(이미 올린 소리의 크레딧은 돌아오지 않음), 게이트웨이가 너무 오래 답하지 않으면(소리 길이의 3배, 최소 3분) 멈추고 다시 시도를 권해요.
@@ -72,7 +72,7 @@
 **SubAhead** is a Chrome extension that transcribes the audio of an HTML5 video on a web page **ahead of time**, so Korean subtitles stay in sync wherever you seek.
 
 - Finds HTML5 videos (files and HLS), extracts audio only (ffmpeg.wasm), and sends it to your speech recognition gateway.
-- On pages with several videos, a checklist in the popup (in page order, all checked by default) lets you leave some out; the rest are made one after another. Or right-click a video → **Create subtitles for this video**.
+- On pages with several videos, a checklist in the popup (in page order, all checked by default) lets you leave some out; the rest are made with overlap (the next video's audio is extracted while the previous one is being transcribed). Or right-click a video → **Create subtitles for this video**.
 - Live preview in the Style tab to adjust size, color and background; subtitles are saved, re-applied automatically, and can be downloaded as .srt from Settings.
 - Cancel while creating; stops with a retry prompt if the gateway takes too long.
 - Shortcuts: "Create subtitles" (no default key; set it at `chrome://extensions/shortcuts`, press twice to start), `Alt+Shift+S` toggle, `Alt+Shift+↑` size, `Alt+Shift+←/→` sync ±0.5s, `Alt+wheel` resize, `Alt+drag` move.

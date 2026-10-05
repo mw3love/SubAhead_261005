@@ -98,18 +98,36 @@ function renderReady(note) {
   $("go").onclick = () => chrome.runtime.sendMessage({ type: "start", tabId, srcs: [info.url] });
 }
 
+// 영상 여러 개를 만들 때 영상마다 보여 줄 상태
+const ITEM_STAGE = {
+  wait: t("stageWaiting"), download: t("stageDownload"), extract: t("stageExtract"), queued: t("stageQueued"),
+  upload: t("stageUpload"), transcribe: t("stageTranscribe"), done: t("toastDone"), failed: t("toastFailed"),
+};
+
 function renderRunning(job) {
-  const now = STEPS.findIndex(([k]) => k === job.stage);
   const secs = job.startedAt ? Math.round((Date.now() - job.startedAt) / 1000) : 0;
-  // 영상 여러 개를 차례로 만들 때는 몇 번째인지
-  const nth = job.total > 1 ? " " + t("nthOf", job.index + 1, job.total) : "";
-  main.innerHTML = `
-    <h2>${t("makingTitle")}${nth}</h2>
-    <ul class="steps">${STEPS.map(([k, label], i) => {
-      const cls = i < now ? "done" : i === now ? "now" : "";
-      const detail = i === now && job.detail ? `<small>${esc(job.detail)}</small>` : "";
-      return `<li class="${cls}"><i>${i < now ? "✓" : ""}</i>${label}${detail}</li>`;
-    }).join("")}</ul>
+  let body;
+  if (job.items && job.items.length > 1) {
+    // 영상별 상태 목록(번호는 영상 목록과 같은 페이지 순서)
+    const done = job.items.filter((it) => it.stage === "done" || it.stage === "failed").length;
+    body = `<h2>${t("makingTitle")} ${t("nthOf", done, job.items.length)}</h2>
+      <ul class="steps items">${job.items.map((it, n) => {
+        // 도는 표시는 실제로 일하는 영상에만(차례를 기다리는 영상은 빈 동그라미)
+        const cls = it.stage === "done" ? "done" : it.stage === "failed" ? "fail" : it.stage === "wait" || it.stage === "queued" ? "" : "now";
+        const mark = it.stage === "done" ? "✓" : it.stage === "failed" ? "!" : "";
+        const detail = cls === "now" && it.detail ? ` · ${esc(it.detail)}` : "";
+        return `<li class="${cls}"><i>${mark}</i>${t("videoN", videoNo(it.url, n))}<small>${ITEM_STAGE[it.stage] || ""}${detail}</small></li>`;
+      }).join("")}</ul>`;
+  } else {
+    const now = STEPS.findIndex(([k]) => k === job.stage);
+    body = `<h2>${t("makingTitle")}</h2>
+      <ul class="steps">${STEPS.map(([k, label], i) => {
+        const cls = i < now ? "done" : i === now ? "now" : "";
+        const detail = i === now && job.detail ? `<small>${esc(job.detail)}</small>` : "";
+        return `<li class="${cls}"><i>${i < now ? "✓" : ""}</i>${label}${detail}</li>`;
+      }).join("")}</ul>`;
+  }
+  main.innerHTML = `${body}
     <p>${t("elapsed", secs)}</p>
     <button class="sub" id="cancel">${t("cancel")}</button>
     <p class="note">${t("cancelNote")}</p>`;
@@ -158,6 +176,12 @@ function render() {
   else if (job && sameVideo && job.status === "done") renderDone(job);
   else renderReady(job && sameVideo && job.status === "cancelled" ? t("jobCancelled") : "");
 }
+
+// 영상 목록에서의 번호(1부터). 목록에 없으면 작업 안의 순서.
+const videoNo = (url, n) => {
+  const k = info.videos ? info.videos.findIndex((v) => v.src === url) : -1;
+  return k >= 0 ? k + 1 : n + 1;
+};
 
 // ---------- [자막] 탭: 영상이 여러 개일 때 ----------
 // 지난 결과(있으면) + 영상 체크 목록(기본 모두 체크, 빼고 싶은 것만 끈다) + 합계 + 만들기 버튼.

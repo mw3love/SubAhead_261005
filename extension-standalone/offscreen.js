@@ -46,7 +46,11 @@ async function transcribe(audio, { baseUrl, apiKey }, report) {
 
 // 지금 하는 작업 번호(jobId). 취소되면 그 뒤의 진행·결과는 보내지 않고 다음 단계에서 멈춘다.
 let current = null;
+const sleep = (ms) => new Promise((res) => setTimeout(res, ms));
 
+// 영상 여러 개를 두 줄로 겹쳐 처리한다.
+// 앞줄(내 PC): 영상 받기·소리 뽑기를 하나씩. 뒷줄(게이트웨이): 올리기·받아 적기를 하나씩.
+// 앞 영상이 받아 적히길 기다리는 동안 다음 영상의 소리를 미리 뽑아 둔다. ffmpeg 는 앞줄만 써서 늘 하나다.
 chrome.runtime.onMessage.addListener((msg) => {
   if (msg.target !== "offscreen") return;
   if (msg.type === "cancel") {
@@ -57,23 +61,55 @@ chrome.runtime.onMessage.addListener((msg) => {
     return;
   }
   if (msg.type !== "transcribe") return;
-  const { jobId, tabId, frameId, url, baseUrl, apiKey } = msg;
+  const { jobId, tabId, items, baseUrl, apiKey } = msg;
   current = jobId;
   const alive = () => current === jobId;
-  const report = (stage, detail) => {
+  const send = (m) => alive() && chrome.runtime.sendMessage({ jobId, tabId, ...m });
+  const reporter = (index) => (stage, detail) => {
     if (!alive()) throw new AppError("CANCELLED");
-    chrome.runtime.sendMessage({ type: "progress", jobId, tabId, url, stage, detail });
+    send({ type: "progress", index, stage, detail });
   };
+  const failed = (index, e) => {
+    if (e.code !== "CANCELLED") send({ type: "failed", index, url: items[index].url, code: e.code || "UNKNOWN", detail: e.code ? e.detail : String(e.message || e) });
+  };
+
+  const audios = [];
+  let produced = 0, remoteBusy = false;
   (async () => {
-    try {
-      report("download", "");
-      const media = await download(url, report);
-      const audio = await extractAudio(media, report);
-      const { segments, credits } = await transcribe(audio, { baseUrl, apiKey }, report);
-      if (alive()) chrome.runtime.sendMessage({ type: "result", jobId, tabId, frameId, url, segments, credits });
-    } catch (e) {
-      if (alive())
-        chrome.runtime.sendMessage({ type: "failed", jobId, tabId, url, code: e.code || "UNKNOWN", detail: e.code ? e.detail : String(e.message || e) });
+    for (let i = 0; i < items.length && alive(); i++) {
+      try {
+        const report = reporter(i);
+        report("download", "");
+        // 영상 서버에 보낼 Referer 를 이 영상의 페이지로 맞춘 뒤 받는다(background 가 규칙을 바꾸고 답한다)
+        await chrome.runtime.sendMessage({ type: "referer", page: items[i].page });
+        const media = await download(items[i].url, report);
+        audios[i] = await extractAudio(media, report);
+        if (remoteBusy && i > 0) report("queued", "");
+      } catch (e) {
+        audios[i] = null;
+        failed(i, e);
+      }
+      produced = i + 1;
+    }
+  })();
+  (async () => {
+    for (let i = 0; i < items.length; i++) {
+      while (produced <= i) {
+        if (!alive()) return;
+        await sleep(200);
+      }
+      const audio = audios[i];
+      audios[i] = undefined;
+      if (!audio || !alive()) continue;
+      remoteBusy = true;
+      try {
+        const { segments, credits } = await transcribe(audio, { baseUrl, apiKey }, reporter(i));
+        send({ type: "result", index: i, url: items[i].url, frameId: items[i].frameId, segments, credits });
+      } catch (e) {
+        failed(i, e);
+      } finally {
+        remoteBusy = false;
+      }
     }
   })();
 });

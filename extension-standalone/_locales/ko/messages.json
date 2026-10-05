@@ -58,6 +58,12 @@
   "stagePreparing": {
     "message": "준비 중"
   },
+  "stageWaiting": {
+    "message": "기다리는 중"
+  },
+  "stageQueued": {
+    "message": "받아 적기 차례를 기다리는 중"
+  },
   "stepDownload": {
     "message": "영상 받기"
   },

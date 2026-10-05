@@ -20,6 +20,8 @@ M = {
  "stageUpload": ("올리는 중", "Uploading"),
  "stageTranscribe": ("받아 적는 중", "Transcribing"),
  "stagePreparing": ("준비 중", "Preparing"),
+ "stageWaiting": ("기다리는 중", "Waiting"),
+ "stageQueued": ("받아 적기 차례를 기다리는 중", "Waiting to transcribe"),
  "stepDownload": ("영상 받기", "Download video"),
  "stepExtract": ("소리만 뽑기", "Extract audio"),
  "stepUpload": ("올리기", "Upload"),
