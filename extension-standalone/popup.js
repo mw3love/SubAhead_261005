@@ -10,7 +10,7 @@ const STEPS = [
   ["transcribe", t("stepTranscribe")],
 ];
 const main = $("main");
-let tabId, info, style = MiriStyle.normalize();
+let tabId, info, chosen = null, style = MiriStyle.normalize(); // chosen: 영상 목록에서 고른 영상 주소
 
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 const lang = chrome.i18n.getUILanguage();
@@ -92,7 +92,7 @@ function renderReady() {
       </div>
       <button id="go" ${short ? "disabled" : ""}>${t("makeAll")}</button>`;
   }
-  $("go").onclick = () => chrome.runtime.sendMessage({ type: "start", tabId });
+  $("go").onclick = () => chrome.runtime.sendMessage({ type: "start", tabId, src: info.url });
 }
 
 function renderRunning(job) {
@@ -118,7 +118,7 @@ function renderDone(job) {
       <button class="sub" id="remake">${remakeLabel}</button>
     </div>`;
   $("toggle").onclick = () => chrome.tabs.sendMessage(tabId, { type: "command", name: "toggle" }).catch(() => {});
-  $("remake").onclick = () => chrome.runtime.sendMessage({ type: "remake", tabId });
+  $("remake").onclick = () => chrome.runtime.sendMessage({ type: "remake", tabId, src: info.url });
 }
 
 function renderError(job) {
@@ -129,7 +129,7 @@ function renderError(job) {
     <div class="card error" role="alert">${esc(job.message)}
       ${job.detail ? `<details><summary>${t("details")}</summary>${esc(job.detail)}</details>` : ""}</div>
     ${buttons}`;
-  if ($("retry")) $("retry").onclick = () => chrome.runtime.sendMessage({ type: "start", tabId });
+  if ($("retry")) $("retry").onclick = () => chrome.runtime.sendMessage({ type: "start", tabId, src: info.url });
   if ($("rekey")) $("rekey").onclick = () => renderKey();
 }
 
@@ -143,9 +143,37 @@ function render() {
   const sameVideo = job && (!job.url || !info.url || job.url === info.url);
   if (!info.hasKey && !(job && job.status === "running")) return renderKey();
   if (job && job.status === "running") return renderRunning(job);
-  if (job && sameVideo && job.status === "error") return renderError(job);
-  if (job && sameVideo && job.status === "done") return renderDone(job);
-  renderReady();
+  if (job && sameVideo && job.status === "error") renderError(job);
+  else if (job && sameVideo && job.status === "done") renderDone(job);
+  else renderReady();
+  renderPicker();
+}
+
+// ---------- [자막] 탭: 영상이 여러 개일 때 고르기 ----------
+// 마우스를 올리거나 키보드로 옮기면 페이지의 그 영상에 테두리를 치고, 고르면 그 영상 기준으로 다시 그린다.
+function renderPicker() {
+  if (!info.videos) return;
+  main.insertAdjacentHTML("afterbegin", `
+    <h3 id="picklbl">${t("pickVideo")}</h3>
+    <div class="picker" role="radiogroup" aria-labelledby="picklbl">${info.videos.map((v, n) => `
+      <button class="pick" role="radio" aria-checked="${v.src === info.url}" data-n="${n}">
+        <span>${t("videoN", n + 1)}${v.src === info.played ? " · " + t("lastPlayed") : ""}</span>
+        <span>${[v.duration ? fmtTime(v.duration) : "", v.cached ? t("hasSubs") : ""].filter(Boolean).join(" · ")}</span>
+      </button>`).join("")}
+    </div>`);
+  const light = (v, on, scroll) =>
+    chrome.tabs.sendMessage(tabId, { type: "highlight", i: v.i, on, scroll }, { frameId: v.frameId }).catch(() => {});
+  for (const btn of main.querySelectorAll(".pick")) {
+    const v = info.videos[+btn.dataset.n];
+    btn.onmouseenter = btn.onfocus = () => light(v, true);
+    btn.onmouseleave = btn.onblur = () => light(v, false);
+    btn.onclick = () => {
+      light(v, true, true);
+      if (v.src === info.url) return;
+      chosen = v.src;
+      load();
+    };
+  }
 }
 
 // ---------- [자막] 탭: 모양(미리보기·크기·색·배경) ----------
@@ -240,7 +268,7 @@ async function saveConn() {
 
 // ---------- 시작 ----------
 async function load() {
-  info = await chrome.runtime.sendMessage({ type: "info", tabId });
+  info = await chrome.runtime.sendMessage({ type: "info", tabId, src: chosen });
   render();
   renderConn();
 }
@@ -275,7 +303,9 @@ async function load() {
     const c = ch["job:" + tabId];
     if (!c) return;
     info.job = c.newValue;
-    render();
+    // 다 만들었으면 영상 목록의 "자막 있음"도 맞도록 정보를 다시 받는다
+    if (info.videos && info.job && info.job.status === "done") load();
+    else render();
   });
   chrome.storage.onChanged.addListener((ch, area) => {
     if (area !== "local") return;

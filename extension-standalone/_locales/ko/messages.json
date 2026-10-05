@@ -267,6 +267,23 @@
   "makeAll": {
     "message": "전체 자막 만들기"
   },
+  "pickVideo": {
+    "message": "자막을 만들 영상"
+  },
+  "videoN": {
+    "message": "영상 $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "lastPlayed": {
+    "message": "방금 재생"
+  },
+  "hasSubs": {
+    "message": "자막 있음"
+  },
   "makingTitle": {
     "message": "자막을 만들고 있어요"
   },

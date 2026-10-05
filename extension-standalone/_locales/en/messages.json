@@ -267,6 +267,23 @@
   "makeAll": {
     "message": "Create full subtitles"
   },
+  "pickVideo": {
+    "message": "Video to subtitle"
+  },
+  "videoN": {
+    "message": "Video $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "lastPlayed": {
+    "message": "Last played"
+  },
+  "hasSubs": {
+    "message": "Has subtitles"
+  },
   "makingTitle": {
     "message": "Creating subtitles"
   },

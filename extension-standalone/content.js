@@ -229,9 +229,35 @@ function askAuto() {
 document.addEventListener("loadedmetadata", (e) => e.target instanceof HTMLVideoElement && askAuto(), true);
 askAuto();
 
+// 영상이 여러 개인 페이지에서 팝업이 기본으로 고를 수 있게, 재생한 영상의 주소를 알린다.
+document.addEventListener("play", (e) => {
+  const v = e.target;
+  if (v instanceof HTMLVideoElement && /^https?:/.test(v.currentSrc))
+    chrome.runtime.sendMessage({ type: "played", src: v.currentSrc }).catch(() => {});
+}, true);
+
+// 팝업의 영상 목록에서 가리킨 영상에 잠깐 노란 테두리를 친다(팝업이 갑자기 닫혀도 3초 뒤 지워진다).
+let lit = null, litTimer;
+function highlight(i, on, scroll) {
+  clearTimeout(litTimer);
+  if (lit) {
+    lit.video.style.outline = lit.outline;
+    lit.video.style.outlineOffset = lit.offset;
+    lit = null;
+  }
+  const v = document.querySelectorAll("video")[i];
+  if (!on || !v) return;
+  lit = { video: v, outline: v.style.outline, offset: v.style.outlineOffset };
+  v.style.outline = "4px solid #facc15";
+  v.style.outlineOffset = "-4px";
+  if (scroll) v.scrollIntoView({ block: "center", behavior: "smooth" });
+  litTimer = setTimeout(() => highlight(0, false), 3000);
+}
+
 chrome.runtime.onMessage.addListener((msg) => {
   if (msg.type === "cues") attachCues(msg.cues, msg.url, msg.offset);
   if (msg.type === "status") showStatus(msg.job);
   if (msg.type === "command") command(msg.name);
   if (msg.type === "notice" && track) notice(msg.title, msg.text);
+  if (msg.type === "highlight") highlight(msg.i, msg.on, msg.scroll);
 });

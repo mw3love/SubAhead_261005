@@ -28,14 +28,14 @@ chrome.webRequest.onBeforeRequest.addListener(
   { urls: ["<all_urls>"] }
 );
 
-chrome.tabs.onRemoved.addListener((tabId) => chrome.storage.session.remove(["media:" + tabId, "job:" + tabId]));
+chrome.tabs.onRemoved.addListener((tabId) => chrome.storage.session.remove(["media:" + tabId, "job:" + tabId, "played:" + tabId]));
 
 // 페이지를 새로 열면 지난 영상 주소와 끝난 작업 결과를 지운다(진행 중인 작업은 둔다).
 chrome.tabs.onUpdated.addListener(async (tabId, change) => {
   if (change.status !== "loading") return;
   const job = (await chrome.storage.session.get("job:" + tabId))["job:" + tabId];
   if (job && job.status === "running") return;
-  await chrome.storage.session.remove(["media:" + tabId, "job:" + tabId]);
+  await chrome.storage.session.remove(["media:" + tabId, "job:" + tabId, "played:" + tabId]);
   chrome.action.setBadgeText({ tabId, text: "" }).catch(() => {});
 });
 
@@ -43,7 +43,8 @@ async function findVideos(tabId) {
   const results = await chrome.scripting.executeScript({
     target: { tabId, allFrames: true },
     func: () =>
-      [...document.querySelectorAll("video")].map((v) => ({
+      [...document.querySelectorAll("video")].map((v, i) => ({
+        i, // 프레임 안에서 몇 번째 영상인지(팝업에서 가리킬 때 쓴다)
         src: v.currentSrc,
         area: v.clientWidth * v.clientHeight,
         duration: v.duration,
@@ -54,8 +55,18 @@ async function findVideos(tabId) {
   return results.flatMap((r) => (r.result || []).map((v) => ({ ...v, frameId: r.frameId }))).sort((a, b) => b.area - a.area);
 }
 
-async function pickSource(tabId, videos) {
+// 팝업에서 고를 수 있는 영상: 화면에 보이고 주소(http)가 드러난 영상. blob 영상은 어느 데이터인지 짝지을 수 없어 뺀다.
+function choices(videos) {
+  const seen = new Set();
+  return videos.filter((v) => v.area > 0 && /^https?:/.test(v.src) && !seen.has(v.src) && seen.add(v.src));
+}
+
+async function pickSource(tabId, videos, chosen) {
+  // 0순위: 팝업에서 고른 영상. 그다음: 마지막으로 재생한 영상.
   // 1순위: <video> 에 바로 걸린 http(s) 주소. 2순위: 처음 본 m3u8(대개 마스터 목록). 3순위: 마지막 mp4.
+  if (chosen && videos.some((v) => v.src === chosen)) return chosen;
+  const played = (await chrome.storage.session.get("played:" + tabId))["played:" + tabId];
+  if (played && videos.some((v) => v.src === played)) return played;
   const direct = videos.find((v) => /^https?:/.test(v.src));
   if (direct) return direct.src;
   const list = (await chrome.storage.session.get("media:" + tabId))["media:" + tabId] || [];
@@ -156,7 +167,7 @@ async function fetchCredits(server) {
   }
 }
 
-async function info(tabId) {
+async function info(tabId, chosen) {
   // 팝업이 열릴 때 보여 줄 것: 키 여부, 영상 길이, 예상 비용, 남은 크레딧, 저장된 자막 여부, 진행 중 작업.
   const server = await getServer();
   const { baseUrl } = await chrome.storage.local.get("baseUrl");
@@ -168,11 +179,19 @@ async function info(tabId) {
   } catch {
     // chrome:// 같은 페이지는 스크립트를 넣을 수 없다
   }
-  const url = await pickSource(tabId, videos);
-  const live = videos.length > 0 && videos[0].duration === Infinity;
-  const duration = videos.length && isFinite(videos[0].duration) ? videos[0].duration : null;
+  const url = await pickSource(tabId, videos, chosen);
+  const picked = videos.find((v) => v.src === url) || videos[0];
+  const live = !!picked && picked.duration === Infinity;
+  const duration = picked && isFinite(picked.duration) ? picked.duration : null;
   const cached = url ? !!(await chrome.storage.local.get("cues:" + url))["cues:" + url] : false;
   const remaining = await fetchCredits(server);
+  // 고를 영상이 둘 이상일 때만 목록을 준다(자막이 이미 있는지도 함께)
+  let list = choices(videos);
+  if (list.length > 1) {
+    const saved = await chrome.storage.local.get(list.map((v) => "cues:" + v.src));
+    list = list.map((v) => ({ src: v.src, frameId: v.frameId, i: v.i, duration: isFinite(v.duration) ? v.duration : null, cached: !!saved["cues:" + v.src] }));
+  } else list = null;
+  const played = (await chrome.storage.session.get("played:" + tabId))["played:" + tabId] || null;
   return {
     hasKey: true,
     job,
@@ -183,6 +202,8 @@ async function info(tabId) {
     cached,
     remaining,
     baseUrl: server.baseUrl,
+    videos: list,
+    played,
   };
 }
 
@@ -250,28 +271,28 @@ async function setReferer(page, baseUrl) {
 }
 
 // 다시 만들기: 저장된 자막을 지우고(맞춘 싱크는 남김) 처음부터 다시 받아 적는다
-async function remake(tabId) {
+async function remake(tabId, chosen) {
   let videos = [];
   try {
     videos = await findVideos(tabId);
   } catch {}
-  const url = await pickSource(tabId, videos);
+  const url = await pickSource(tabId, videos, chosen);
   if (url) await chrome.storage.local.remove(["cues:" + url, "meta:" + url]);
-  return start(tabId);
+  return start(tabId, chosen);
 }
 
-async function start(tabId) {
+async function start(tabId, chosen) {
   const server = await getServer();
   if (!server) return fail(tabId, null, "NO_KEY");
   let videos = [];
   try {
     videos = await findVideos(tabId);
   } catch {}
-  const url = await pickSource(tabId, videos);
+  const url = await pickSource(tabId, videos, chosen);
   if (!url) return fail(tabId, null, "NO_VIDEO");
-  if (videos.length && videos[0].duration === Infinity) return fail(tabId, url, "LIVE");
   // 고른 영상이 있는 프레임(영상 주소로 찾는다). 못 찾으면(m3u8 등) 모든 프레임에 보낸다.
   const source = videos.find((v) => v.src === url);
+  if ((source || videos[0] || {}).duration === Infinity) return fail(tabId, url, "LIVE");
   const frameId = source ? source.frameId : null;
   const cacheKey = "cues:" + url;
   const cached = (await chrome.storage.local.get(cacheKey))[cacheKey];
@@ -281,22 +302,24 @@ async function start(tabId) {
   }
   await setJob(tabId, { status: "running", stage: "download", detail: "", url, startedAt: Date.now() });
   const tab = await chrome.tabs.get(tabId).catch(() => null);
-  await setReferer((videos[0] && videos[0].page) || (tab && tab.url), server.baseUrl);
+  await setReferer(((source || videos[0]) || {}).page || (tab && tab.url), server.baseUrl);
   await ensureOffscreen();
   chrome.runtime.sendMessage({ target: "offscreen", type: "transcribe", tabId, frameId, url, ...server });
 }
 
 chrome.runtime.onMessage.addListener((msg, sender, reply) => {
   if (msg.type === "info") {
-    info(msg.tabId).then(reply);
+    info(msg.tabId, msg.src).then(reply);
     return true;
   }
   if (msg.type === "saveKey") {
     saveServer(msg.baseUrl, msg.apiKey).then(reply);
     return true;
   }
-  if (msg.type === "start") start(msg.tabId);
-  if (msg.type === "remake") remake(msg.tabId);
+  if (msg.type === "start") start(msg.tabId, msg.src);
+  if (msg.type === "remake") remake(msg.tabId, msg.src);
+  // 영상이 여러 개일 때 기본으로 고를 영상: 마지막으로 재생한 영상
+  if (msg.type === "played" && sender.tab) chrome.storage.session.set({ ["played:" + sender.tab.id]: msg.src });
   if (msg.type === "autoAttach" && sender.tab) autoAttach(sender.tab.id, sender.frameId, msg.video);
   if (msg.type === "progress") {
     chrome.storage.session.get("job:" + msg.tabId).then((s) => {

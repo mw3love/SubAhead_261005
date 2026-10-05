@@ -51,6 +51,11 @@
   .steps li small { margin-left: auto; font-weight: 400; color: var(--muted); }
   @keyframes spin { to { transform: rotate(360deg); } }
   .error { background: var(--err-bg); border-color: transparent; color: var(--err); }
+  .picker { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+  button.pick { display: flex; justify-content: space-between; gap: 8px; text-align: left; padding: 8px 10px;
+                background: var(--panel); color: var(--fg); border: 1px solid var(--line2); font-weight: 500; }
+  button.pick[aria-checked="true"] { border-color: var(--accent); color: var(--accent); font-weight: 700; }
+  button.pick span:last-child { color: var(--muted); font-weight: 400; }
   details { margin-top: 8px; color: var(--muted); font-size: 11px; word-break: break-all; }
 
   /* 자막 모양 */
