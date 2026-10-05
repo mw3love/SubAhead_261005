@@ -16,18 +16,38 @@ const ERROR_ACTION = {
 // 이 오류가 나면 남은 영상도 똑같이 실패하므로 차례 만들기를 멈춘다
 const STOP_ALL = ["BAD_KEY", "NO_CREDIT"];
 
+// 서버가 알려 주는 파일 종류. 이름이 .m3u8 로 끝나지 않는 재생목록도 이걸로 알아본다.
+// video/mp4 는 넣지 않는다(잘게 나눠 받는 사이트에서 조각 하나를 영상 전체로 착각한다).
+const HLS_TYPE_RE = /mpegurl/i;
+
+function rememberMedia(tabId, entry) {
+  const key = "media:" + tabId;
+  chrome.storage.session.get(key).then((s) => {
+    const list = s[key] || [];
+    if (list.some((m) => m.url === entry.url)) return;
+    list.push(entry);
+    chrome.storage.session.set({ [key]: list.slice(-50) });
+  });
+}
+
+const isHls = (m) => m.hls || /\.m3u8/i.test(m.url);
+
 chrome.webRequest.onBeforeRequest.addListener(
   (d) => {
     if (d.tabId < 0 || !MEDIA_RE.test(d.url)) return;
-    const key = "media:" + d.tabId;
-    chrome.storage.session.get(key).then((s) => {
-      const list = s[key] || [];
-      if (list.some((m) => m.url === d.url)) return;
-      list.push({ url: d.url });
-      chrome.storage.session.set({ [key]: list.slice(-50) });
-    });
+    rememberMedia(d.tabId, { url: d.url });
   },
   { urls: ["<all_urls>"] }
+);
+
+chrome.webRequest.onHeadersReceived.addListener(
+  (d) => {
+    if (d.tabId < 0 || MEDIA_RE.test(d.url)) return; // 이름으로 이미 알아본 주소
+    const type = ((d.responseHeaders || []).find((h) => h.name.toLowerCase() === "content-type") || {}).value || "";
+    if (HLS_TYPE_RE.test(type)) rememberMedia(d.tabId, { url: d.url, hls: true });
+  },
+  { urls: ["<all_urls>"], types: ["xmlhttprequest", "media", "other"] },
+  ["responseHeaders"]
 );
 
 chrome.tabs.onRemoved.addListener((tabId) => chrome.storage.session.remove(["media:" + tabId, "job:" + tabId, "played:" + tabId]));
@@ -96,9 +116,9 @@ async function pickSource(tabId, videos) {
   const direct = videos.find((v) => /^https?:/.test(v.src));
   if (direct) return direct.src;
   const list = (await chrome.storage.session.get("media:" + tabId))["media:" + tabId] || [];
-  const m3u8 = list.find((m) => /\.m3u8/i.test(m.url));
+  const m3u8 = list.find(isHls);
   if (m3u8) return m3u8.url;
-  const file = list.filter((m) => !/\.m3u8/i.test(m.url)).pop();
+  const file = list.filter((m) => !isHls(m)).pop();
   return file ? file.url : null;
 }
 
